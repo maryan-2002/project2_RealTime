@@ -172,17 +172,17 @@ void display() {
 
     glFlush();
 }
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(1000, 800);
-    glutCreateWindow("Hierarchical File Structure");
+// int main(int argc, char** argv) {
+//     glutInit(&argc, argv);
+//     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+//     glutInitWindowSize(1000, 800);
+//     glutCreateWindow("Hierarchical File Structure");
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);  // White background
-    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // Set coordinate system
+//     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);  // White background
+//     gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // Set coordinate system
 
-    glutDisplayFunc(display);
-    glutMainLoop();
+//     glutDisplayFunc(display);
+//     glutMainLoop();
 
-    return 0;
-}
+//     return 0;
+// }
