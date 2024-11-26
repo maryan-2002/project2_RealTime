@@ -5,8 +5,8 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2
 
 # Define the source files and the target executable
-SRC = main.c  Animation.c generator.c
-OBJ = main.o  Animation.o generator.o
+SRC = main.c Animation.c generator.c calculator.c
+OBJ = main.o Animation.o generator.o calculator.o
 TARGET = globel
 
 # Default target to compile the program
@@ -17,15 +17,17 @@ $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lGL -lGLU -lglut -lpthread -lm  # Link OpenGL, pthread, and math libraries
 
 # Compile source files into object files
-main.o: main.c
+main.o: main.c 
 	$(CC) $(CFLAGS) -c main.c
 
-
-Animation.o: Animation.c  # Added rule for animation.o
+Animation.o: Animation.c 
 	$(CC) $(CFLAGS) -c Animation.c
 
-generator.o: generator.c
+generator.o: generator.c 
 	$(CC) $(CFLAGS) -c generator.c
+
+calculator.o: calculator.c 
+	$(CC) $(CFLAGS) -c calculator.c
 
 # Run the program
 run: $(TARGET)

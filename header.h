@@ -42,10 +42,16 @@ typedef struct {
 } GeneratorParams;
 
 
-// Shared memory structure for the file count (serial number)
 struct MEMORY {
-    int file_count; // Shared file count
+    int file_count;           // Shared file count (number of processed files)
+    int num_calculators;      // Number of file calculators (threads)
+    pthread_mutex_t file_mutex;    // Mutex to synchronize file access
 };
+
+typedef struct {
+    int calculator_id;
+    int max_cols;
+} CalculatorParams;
 
 // Semaphore operations
 union semun {
@@ -59,7 +65,20 @@ extern struct sembuf release;
 // Shared semaphore ID
 extern int sem_id;
 extern struct MEMORY *shared_memory; // Shared memory pointer
+extern struct MEMORYcalculator calc;
 
 
+struct MEMORYcalculator {
+    char file_number[100]; 
+    int calculator_id;      
+    int num_rows;          
+    double *column_averages; // Dynamic array for column averages
+};
+
+// Shared array of MEMORYcalculator with mutex
+struct SharedCalculators {
+    struct MEMORYcalculator *calculators; // Array of MEMORYcalculator
+    pthread_mutex_t mutex;               // Mutex for synchronization
+};
 
 #endif

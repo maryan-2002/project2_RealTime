@@ -1,6 +1,7 @@
 #include "header.h"
 #include "globel.c"
 #include "generator.h"
+#include "calculator.h"
 
 // Global variables for configuration
 int min_rows = DEFAULT_MIN_ROWS;
@@ -19,6 +20,7 @@ struct MEMORY *shared_memory; // Shared memory pointer
 
 int main(int argc, char *argv[]) {
     int num_generators = DEFAULT_GENERATORS;
+    int num_calculators = DEFAULT_GENERATORS;
     int min_time = DEFAULT_MIN_TIME;
     int max_time = DEFAULT_MAX_TIME;
 
@@ -65,9 +67,27 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Join threads (optional; can be omitted if continuous operation is desired)
+     pthread_t calculator_threads[num_calculators];
+    CalculatorParams calculator_params[num_calculators];
+
+    for (int i = 0; i < num_calculators; i++) {
+        calculator_params[i].calculator_id = i + 1;
+        calculator_params[i].max_cols = max_cols;
+
+        if (pthread_create(&calculator_threads[i], NULL, calculator_thread, &calculator_params[i]) != 0) {
+            perror("Failed to create calculator thread");
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Join generator threads (optional, for continuous operation remove this part)
     for (int i = 0; i < num_generators; i++) {
         pthread_join(threads[i], NULL);
+    }
+
+    // Join calculator threads
+    for (int i = 0; i < num_calculators; i++) {
+        pthread_join(calculator_threads[i], NULL);
     }
 
     return EXIT_SUCCESS;
