@@ -24,7 +24,6 @@
 #include <math.h>
 
 
-
 // Declare the variables as extern in the header file
 extern int min_rows;
 extern int max_rows;
@@ -65,14 +64,15 @@ extern struct sembuf release;
 // Shared semaphore ID
 extern int sem_id;
 extern struct MEMORY *shared_memory; // Shared memory pointer
-extern struct MEMORYcalculator calc;
-
+extern struct SharedCalculators calc;
+extern pthread_mutex_t fifo_mutex; 
 
 struct MEMORYcalculator {
-    char file_number[100]; 
-    int calculator_id;      
-    int num_rows;          
-    double *column_averages; // Dynamic array for column averages
+    int calculator_id;
+    char *file_number;
+    int num_rows;
+    double *column_averages;
+    struct MEMORYcalculator *next;  // Pointer to the next node
 };
 
 // Shared array of MEMORYcalculator with mutex

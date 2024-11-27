@@ -19,6 +19,7 @@ struct MEMORY *shared_memory; // Shared memory pointer
 
 
 int main(int argc, char *argv[]) {
+    
     int num_generators = DEFAULT_GENERATORS;
     int num_calculators = DEFAULT_GENERATORS;
     int min_time = DEFAULT_MIN_TIME;
@@ -50,6 +51,10 @@ int main(int argc, char *argv[]) {
 
     // Seed random number generator
     srand(time(NULL));
+
+    if (mkfifo(FIFO_PATH, 0666) < 0) {
+        perror("Error creating FIFO");
+    }
 
     // Create threads for each file generator
     init_semaphore();

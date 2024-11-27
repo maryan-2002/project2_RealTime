@@ -1,7 +1,7 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 #include "header.h"
-
+#include "globel.c"
 
 void generate_csv_file(int generator_id);
 

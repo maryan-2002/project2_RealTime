@@ -123,6 +123,24 @@ void generate_csv_file(int generator_id)
 
     fclose(file);
     printf("Generator %d created file: %s with %d rows and %d columns\n", generator_id, filename, rows, cols);
+
+    // Open the FIFO for writing
+    int fifo_fd = open(FIFO_PATH, O_WRONLY);
+    if (fifo_fd < 0)
+    {
+        perror("Error opening FIFO");
+        return;
+    }
+
+    sprintf(filename, "%s\n", filename);
+    // Write the file name to the FIFO
+    if (write(fifo_fd, filename, strlen(filename)) < 0)
+    {
+        perror("Error writing to FIFO");
+    }
+
+    // Close the FIFO
+    close(fifo_fd);
 }
 
 // Thread function for each generator

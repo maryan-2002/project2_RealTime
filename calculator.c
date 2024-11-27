@@ -1,18 +1,18 @@
 #include "header.h"
 #include "calculator.h"
+#include "globel.c"
 
 
-// Function to calculate column averages for a given CSV file
+
 void calculate_csv_file(const char *filename, int calculator_id) {
-
-     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
+    struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
     if (!newValue) {
         perror("Failed to allocate memory for MEMORYcalculator");
         return;
     }
-    newValue->calculator_id = calculator_id;
 
-    // Allocate and copy the filename
+    newValue->calculator_id = calculator_id;
+    newValue->file_number = malloc(strlen(filename) + 1);
     if (!newValue->file_number) {
         perror("Failed to allocate memory for file_number");
         free(newValue);
@@ -20,144 +20,204 @@ void calculate_csv_file(const char *filename, int calculator_id) {
     }
     strcpy(newValue->file_number, filename);
 
-    // Initialize other fields
     newValue->num_rows = 0;
-    newValue->column_averages = malloc(max_cols * sizeof(double));
+    newValue->column_averages = calloc(max_cols, sizeof(double));
     if (!newValue->column_averages) {
         perror("Failed to allocate memory for column_averages");
         free(newValue->file_number);
         free(newValue);
         return;
     }
+    newValue->next = NULL;  // New node is initially not pointing to any other node
 
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Error opening file");
+        free(newValue->column_averages);
+        free(newValue->file_number);
+        free(newValue);
         return;
     }
-    int column_sums[] = {0};    
-    int column_counts[] = {0}; 
-    int column_total = 0;       
-    char line[1024];              
 
+    double *column_sums = calloc(max_cols, sizeof(double));
+    int *column_counts = calloc(max_cols, sizeof(int));
+    if (!column_sums || !column_counts) {
+        perror("Failed to allocate memory for temporary arrays");
+        free(column_sums);
+        free(column_counts);
+        fclose(file);
+        free(newValue->column_averages);
+        free(newValue->file_number);
+        free(newValue);
+        return;
+    }
 
-    // Read file line by line
-    // while (fgets(line, sizeof(line), file)) {
-    //     newValue->num_rows++; // Increment the row count
-
-    //     column_total = 0; // Reset column count for the current row
-    //     char *token = strtok(line, ","); // Split by comma
-    //     while (token) {
-    //         // Process each value
-    //         if (*token != '\n' && *token != '\r') { // Ignore newlines
-    //             int value;
-    //             if (sscanf(token, "%d", &value) == 1) {
-    //                 column_sums[column_total] += value;
-    //                 column_counts[column_total]++;
-    //             }
-    //         }
-    //         token = strtok(NULL, ",");
-    //         column_total++;
-    //     }
-    // }
+    char line[LINE_BUFFER_SIZE];
+    while (fgets(line, sizeof(line), file)) {
+        newValue->num_rows++;
+        int column_index = 0;
+        char *token = strtok(line, ",");
+        while (token) {
+            char *endptr;
+            while (*token == '\n' || *token == '\r') token++;
+            double value = strtod(token, &endptr);
+            if (endptr != token && column_index < max_cols) {
+                column_sums[column_index] += value;
+                column_counts[column_index]++;
+            }
+            token = strtok(NULL, ",");
+            column_index++;
+        }
+    }
     fclose(file);
 
-    // // Allocate memory for column averages
-    // newValue->column_averages = malloc(column_total * sizeof(double));
-    // if (!newValue->column_averages) {
-    //     perror("Failed to allocate memory for column averages");
-    //     return;
-    // }
+    for (int i = 0; i < max_cols; i++) {
+        if (column_counts[i] > 0) {
+            newValue->column_averages[i] = column_sums[i] / column_counts[i];
+        }
+    }
 
-    // // Calculate averages
-    // for (int i = 0; i < column_total; i++) {
-    //     if (column_counts[i] > 0) {
-    //         newValue->column_averages[i] = (double)column_sums[i] / column_counts[i];
-    //     } else {
-    //         newValue->column_averages[i] = 0.0; // No valid values
-    //     }
-    // }
+    pthread_mutex_lock(&calc.mutex);
 
-    // printf("Calculator ID: %d\n", newValue->calculator_id);
-    // printf("Processed File: %s\n", newValue->file_number);
-    // printf("Number of Rows: %d\n", newValue->num_rows);
-    // printf("Column Averages:\n");
-    // for (int i = 0; i < column_total; i++) {
-    //     printf("  Column %d: %.2f\n", i + 1, newValue->column_averages[i]);
-    // }
+    if (calc.calculators == NULL) {
+        calc.calculators = newValue;  // If the list is empty, the new node becomes the head
+    } else {
+        struct MEMORYcalculator *current = calc.calculators;
+        while (current->next != NULL) {  // Traverse to the last node
+            current = current->next;
+        }
+        current->next = newValue;  // Append the new node to the end of the list
+    }
+
+    pthread_mutex_unlock(&calc.mutex);
+
+    free(column_sums);
+    free(column_counts);
 }
 
-
-
-// Example calculator thread function
-// Calculator thread function
 void *calculator_thread(void *arg) {
     CalculatorParams *params = (CalculatorParams *)arg;
     printf("Calculator thread %d started, processing up to %d columns.\n",
            params->calculator_id, params->max_cols);
 
-    // Loop until all files are processed
-    while (1) {
-        // Lock the mutex to check and update the file serial number
-        pthread_mutex_lock(&shared_memory->file_mutex);
-
-        if (shared_memory->file_count > shared_memory->num_calculators ) {
-            int file_serial = shared_memory->num_calculators ;
-            shared_memory->num_calculators ++; // Decrement the file count for the next file
-
-            // Unlock the mutex after accessing the shared resource
-            pthread_mutex_unlock(&shared_memory->file_mutex);
-
-            // Create the filename using the serial number
-            char filename[256];
-            snprintf(filename, sizeof(filename), "%d.csv", file_serial);
-            sleep(3);
-            printf("Calculator thread %d started, processing up to %d files.\n",
-            params->calculator_id, file_serial);
-
-            // Process the CSV file (call the actual function to calculate averages, etc.)
-            calculate_csv_file(filename,params->calculator_id);
-        } else {
-            // No files left to process, unlock the mutex and exit
-            pthread_mutex_unlock(&shared_memory->file_mutex);
-        }
+    int fifo_fd = open(FIFO_PATH, O_WRONLY); // Open the FIFO for writing
+    if (fifo_fd < 0) {
+        perror("Error opening FIFO for writing");
+        return NULL;
     }
 
+    while (1) {
+        pthread_mutex_lock(&shared_memory->file_mutex);
+
+        if (shared_memory->file_count > shared_memory->num_calculators) {
+            char buffer[256]; 
+            ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
+            pthread_mutex_unlock(&shared_memory->file_mutex);
+            if (bytesRead > 0) {
+                buffer[bytesRead] = '\0'; // Null-terminate the string
+                char *filename = strtok(buffer, "\n");
+                while (filename != NULL) {
+                    printf("Calculator thread %d is processing file: %s\n", params->calculator_id, filename);
+                    calculate_csv_file(filename, params->calculator_id);
+
+                    // Lock the mutex before writing to FIFO to ensure no simultaneous writes
+                    pthread_mutex_lock(&fifo_mutex);
+                    write(fifo_fd, filename, strlen(filename) + 1); // Write the filename to FIFO
+                    pthread_mutex_unlock(&fifo_mutex);
+
+                    filename = strtok(NULL, "\n");
+                }
+            }
+        }
+        shared_memory->num_calculators ++;
+    }
+
+    close(fifo_fd);
     return NULL;
 }
 
-// int main(int argc, char *argv[]) {
-//     if (argc < 2) {
-//         fprintf(stderr, "Usage: %s <csv_file>\n", argv[0]);
-//         return EXIT_FAILURE;
+
+// void calculate_csv_file(const char *filename, int calculator_id) {
+//     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
+//     if (!newValue) {
+//         perror("Failed to allocate memory for MEMORYcalculator");
+//         return;
 //     }
 
-//     // Attach to shared memory
-//     key_t shm_key = ftok("shared_memory_key", 1);
-//     int shm_id = shmget(shm_key, sizeof(struct MEMORY), 0666);
-//     if (shm_id == -1) {
-//         perror("Shared memory access failed");
-//         return EXIT_FAILURE;
+//     newValue->calculator_id = calculator_id;
+//     if (!newValue->file_number) {
+//         perror("Failed to allocate memory for file_number");
+//         free(newValue);
+//         return;
 //     }
-//     struct MEMORY *shared_memory = (struct MEMORY *)shmat(shm_id, NULL, 0);
-//     if (shared_memory == (void *)-1) {
-//         perror("Shared memory attach failed");
-//         return EXIT_FAILURE;
-//     }
+//     strcpy(newValue->file_number, filename);
 
-//     // Access semaphore
-//     key_t sem_key = ftok("semaphore_key", 1);
-//     int sem_id = semget(sem_key, 1, 0666);
-//     if (sem_id == -1) {
-//         perror("Semaphore access failed");
-//         return EXIT_FAILURE;
+//     newValue->num_rows = 0;
+//     newValue->column_averages = calloc(max_cols, sizeof(double));
+//     if (!newValue->column_averages) {
+//         perror("Failed to allocate memory for column_averages");
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
 //     }
 
-//     // Process the CSV file
-//     calculate_csv_file(argv[1], shared_memory, sem_id);
+//     FILE *file = fopen(filename, "r");
+//     if (!file) {
+//         perror("Error opening file");
+//         free(newValue->column_averages);
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
+//     }
 
-//     // Detach from shared memory
-//     shmdt(shared_memory);
+//     char line[LINE_BUFFER_SIZE];
+//     double *column_sums = calloc(max_cols, sizeof(double));
+//     int *column_counts = calloc(max_cols, sizeof(int));
+//     if (!column_sums || !column_counts) {
+//         perror("Failed to allocate memory for temporary arrays");
+//         free(column_sums);
+//         free(column_counts);
+//         fclose(file);
+//         free(newValue->column_averages);
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
+//     }
 
-//     return EXIT_SUCCESS;
+//     while (fgets(line, sizeof(line), file)) {
+//         newValue->num_rows++;
+//         int column_index = 0;
+//         char *token = strtok(line, ",");
+//         while (token) {
+//             char *endptr;
+//             while (*token == '\n' || *token == '\r') token++;
+//             double value = strtod(token, &endptr);
+//             if (endptr != token && column_index < max_cols) {
+//                 column_sums[column_index] += value;
+//                 column_counts[column_index]++;
+//             }
+//             token = strtok(NULL, ",");
+//             column_index++;
+//         }
+//     }
+//     fclose(file);
+
+//     for (int i = 0; i < max_cols; i++) {
+//         if (column_counts[i] > 0) {
+//             newValue->column_averages[i] = column_sums[i] / column_counts[i];
+//         }
+//     }
+
+//     printf("Calculator ID: %d\n", newValue->calculator_id);
+//     printf("Processed File: %s\n", newValue->file_number);
+//     printf("Number of Rows: %d\n", newValue->num_rows);
+//     printf("Column Averages:\n");
+//     for (int i = 0; i < max_cols && column_counts[i] > 0; i++) {
+//         printf("  Column %d: %.2f\n", i + 1, newValue->column_averages[i]);
+//     }
+
+//     free(column_sums);
+//     free(column_counts);
+//     free(newValue);
+//     newValue = NULL;  
 // }
