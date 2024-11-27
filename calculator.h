@@ -1,6 +1,5 @@
 #ifndef CALCULATOR_H
 #define CALCULATOR_H
-#include "header.h"
 
 
 int init_calculator(struct MEMORYcalculator *calculator, int max_columns) ;

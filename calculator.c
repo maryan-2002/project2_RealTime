@@ -105,6 +105,12 @@ void *calculator_thread(void *arg) {
         perror("Error opening FIFO for writing");
         return NULL;
     }
+    int fifo_fd_move = open(FIFO_PATH_MOVE, O_WRONLY); // Open the FIFO for writing
+    if (fifo_fd < 0) {
+        perror("Error opening FIFO for writing");
+        return NULL;
+    }
+    
 
     while (1) {
         pthread_mutex_lock(&shared_memory->file_mutex);
@@ -122,7 +128,7 @@ void *calculator_thread(void *arg) {
 
                     // Lock the mutex before writing to FIFO to ensure no simultaneous writes
                     pthread_mutex_lock(&fifo_mutex);
-                    write(fifo_fd, filename, strlen(filename) + 1); // Write the filename to FIFO
+                    write(fifo_fd_move, filename, strlen(filename) + 1); // Write the filename to FIFO
                     pthread_mutex_unlock(&fifo_mutex);
 
                     filename = strtok(NULL, "\n");

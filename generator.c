@@ -54,18 +54,27 @@ float get_random_value(float min_value, float max_value)
     return ((float)rand() / RAND_MAX) * (max_value - min_value) + min_value;
 }
 
-// Function to generate a CSV file
+#include <sys/stat.h>
+#include <unistd.h>
+
 void generate_csv_file(int generator_id)
 {
+    // Ensure the "home" directory exists
+    struct stat st = {0};
+    if (stat("home", &st) == -1)
+    {
+        mkdir("home", 0777); // Create the "home" directory with full permissions
+    }
+
     // Protect shared resource (file_count) with semaphore
     semop(sem_id, &acquire, 1); // Wait for access to the file count
 
     // Get the current file count from shared memory
     int file_count = shared_memory->file_count;
 
-    // Generate a unique file name (based on the file_count)
-    char filename[50];
-    sprintf(filename, "%d.csv", file_count); // File name based on the serial number
+    // Generate a unique file name in the "home" directory
+    char filename[100];
+    snprintf(filename, sizeof(filename), "home/%d.csv", file_count);
 
     // Open the new file for writing
     FILE *file = fopen(filename, "w");
@@ -96,13 +105,13 @@ void generate_csv_file(int generator_id)
     fprintf(file, "\n");
 
     int deleted_count = 0;
-    int number_of_delate = ceil((rows * cols) * (miss_percentage / (double)100.0));
+    int number_of_delete = ceil((rows * cols) * (miss_percentage / (double)100.0));
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
             // Decide randomly if this value should be deleted
-            if (deleted_count < number_of_delate && rand() % (rows * cols) < number_of_delate)
+            if (deleted_count < number_of_delete && rand() % (rows * cols) < number_of_delete)
             {
                 deleted_count++;
                 fprintf(file, " ");
@@ -132,7 +141,6 @@ void generate_csv_file(int generator_id)
         return;
     }
 
-    sprintf(filename, "%s\n", filename);
     // Write the file name to the FIFO
     if (write(fifo_fd, filename, strlen(filename)) < 0)
     {
@@ -155,6 +163,6 @@ void *file_generator(void *arg)
         generate_csv_file(params->generator_id);
     }
 
-    printf("hi     hi \n");
+    //printf("hi     hi \n");
     return NULL;
 }
