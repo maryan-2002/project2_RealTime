@@ -54,8 +54,6 @@ float get_random_value(float min_value, float max_value)
     return ((float)rand() / RAND_MAX) * (max_value - min_value) + min_value;
 }
 
-#include <sys/stat.h>
-#include <unistd.h>
 
 void generate_csv_file(int generator_id)
 {
@@ -140,6 +138,7 @@ void generate_csv_file(int generator_id)
         perror("Error opening FIFO");
         return;
     }
+ 
 
     // Write the file name to the FIFO
     if (write(fifo_fd, filename, strlen(filename)) < 0)

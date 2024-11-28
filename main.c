@@ -2,7 +2,7 @@
 #include "globel.c"
 #include "generator.h"
 #include "calculator.h"
-#include "mover.h" // Include the mover header for thread functions
+#include "mover.h" 
 
 // Global variables for configuration
 int min_rows = DEFAULT_MIN_ROWS;
@@ -66,6 +66,8 @@ int main(int argc, char *argv[]) {
         perror("Error creating FIFO for movers");
     }
 
+
+
     // Create threads for each file generator
     init_semaphore();
     initialize_fifo_mutex();
@@ -97,6 +99,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    create_processed_directory();
     // Create threads for each CSV file mover
     pthread_t mover_threads[num_movers];
     for (int i = 0; i < num_movers; i++) {

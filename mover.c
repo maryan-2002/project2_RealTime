@@ -5,7 +5,7 @@
 // Function to create the "Processed" directory if it does not exist
 int create_processed_directory()
 {
-    const char *dir = "/home/Processed";
+    const char *dir = "./home/Processed";
     struct stat st = {0};
 
     if (stat(dir, &st) == -1)
@@ -15,9 +15,14 @@ int create_processed_directory()
             perror("Failed to create Processed directory");
             return -1;
         }
+        printf("Directory '%s' created successfully.\n", dir);
+    }
+    else
+    {
+        printf("Directory '%s' already exists.\n", dir);
     }
 
-    return 0;
+    return 0; 
 }
 // Define and initialize the mutex here
 
@@ -33,7 +38,7 @@ void initialize_fifo_mutex()
 // Function to move a file to the "Processed" directory
 int move_file_to_processed(const char *filename)
 {
-    const char *processed_dir = "/home/Processed/";
+    const char *processed_dir = "./home/Processed/";
 
     // Build the destination path
     char destination[MAX_FILENAME_LENGTH];
@@ -54,11 +59,6 @@ int move_file_to_processed(const char *filename)
 void *mover_thread(void *arg)
 {
     // Create the "Processed" directory if it doesn't exist
-    if (create_processed_directory() == -1)
-    {
-        return NULL;
-    }
-
     // Open the FIFO for reading
     int fifo_fd = open(FIFO_PATH_MOVE, O_RDONLY);
     if (fifo_fd < 0)
