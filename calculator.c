@@ -30,7 +30,7 @@ void calculate_csv_file(const char *filename, int calculator_id)
         free(newValue);
         return;
     }
-    newValue->next = NULL; // New node is initially not pointing to any other node
+    newValue->next = NULL;
 
     FILE *file = fopen(filename, "r");
     if (!file)
@@ -61,22 +61,26 @@ void calculate_csv_file(const char *filename, int calculator_id)
     {
         newValue->num_rows++;
         int column_index = 0;
+
         char *token = strtok(line, ",");
-        while (token)
-        {
-            char *endptr;
-            while (*token == '\n' || *token == '\r')
-                token++;
-            double value = strtod(token, &endptr);
-            if (endptr != token && column_index < max_cols)
-            {
-                column_sums[column_index] += value;
-                column_counts[column_index]++;
-            }
-            token = strtok(NULL, ",");
-            column_index++;
-        }
+        // while (token)
+        // {
+        //     while (*token == '\n' || *token == '\r')
+        //         token++;
+
+        //     char *endptr;
+        //     double value = strtod(token, &endptr);
+        //     if (endptr != token && column_index < max_cols)
+        //     {
+        //         column_sums[column_index] += value;
+        //         column_counts[column_index]++;
+        //     }
+
+        //     token = strtok(NULL, ",");
+        //     column_index++;
+      //  }
     }
+
     fclose(file);
 
     for (int i = 0; i < max_cols; i++)
@@ -87,79 +91,169 @@ void calculate_csv_file(const char *filename, int calculator_id)
         }
     }
 
-    pthread_mutex_lock(&calc.mutex);
-
-    if (calc.calculators == NULL)
-    {
-        calc.calculators = newValue; // If the list is empty, the new node becomes the head
-    }
-    else
-    {
-        struct MEMORYcalculator *current = calc.calculators;
-        while (current->next != NULL)
-        { // Traverse to the last node
-            current = current->next;
-        }
-        current->next = newValue; // Append the new node to the end of the list
-    }
-
-    pthread_mutex_unlock(&calc.mutex);
-    printf("Calculator ID: %d\n", newValue->calculator_id);
+    printf("\nCalculator ID: %d\n", newValue->calculator_id);
     printf("Processed File: %s\n", newValue->file_number);
     printf("Number of Rows: %d\n", newValue->num_rows);
     printf("Column Averages:\n");
-    // for (int i = 0; i < max_cols && column_counts[i] > 0; i++)
+    // for (int i = 0; i < max_cols; i++)
     // {
-    //     printf("  Column %d: %.2f\n", i + 1, newValue->column_averages[i]);
+    //     if (column_counts[i] > 0)
+    //     {
+    //         printf("  Column %d: %.2f\n", i + 1, newValue->column_averages[i]);
+    //     }
     // }
-    printf(" doooneee baby");
+
     free(column_sums);
     free(column_counts);
+    free(newValue->file_number);
+    free(newValue->column_averages);
+    free(newValue);
 }
+
+#define MAX_FILES 100
+#define FILENAME_MAX_LENGTH 256
 
 void *calculator_thread(void *arg)
 {
     CalculatorParams *params = (CalculatorParams *)arg;
 
     int fifo_fd = open(FIFO_PATH, O_RDONLY | O_NONBLOCK);
-    if (fifo_fd < 0) {
+    if (fifo_fd < 0)
+    {
         perror("Error opening FIFO for reading");
         return NULL;
     }
-    int fifo_fd_move =open(FIFO_PATH_MOVE, O_WRONLY);
-    if (fifo_fd_move < 0) {
-        perror("Error opening FIFO for writing");
-        close(fifo_fd);
-        return NULL;
-    }
 
-    while (1) {
+    char file_names[MAX_FILES][FILENAME_MAX_LENGTH]; // Array to store file names
+    int file_count = 0; // Number of files stored in the array
+
+    while (1)
+    {
         pthread_mutex_lock(&shared_memory->file_mutex);
 
-        if (shared_memory->file_count > shared_memory->num_calculators) {
+        if (shared_memory->file_count > shared_memory->num_calculators)
+        {
             shared_memory->num_calculators++;
+
+            char buffer[1024]; // Temporary buffer to read from FIFO
+            ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
+
             pthread_mutex_unlock(&shared_memory->file_mutex);
 
-            char buffer[256];
-            ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
-            if (bytesRead > 0) {
+            if (bytesRead > 0)
+            {
                 buffer[bytesRead] = '\0'; // Null-terminate the string
                 char *filename = strtok(buffer, "\n");
-                calculate_csv_file(filename, params->calculator_id);
-                write(fifo_fd_move, filename, strlen(filename) + 1); // Write the filename to FIFO
-            } else if (bytesRead == -1 && errno != EAGAIN) {
+
+                while (filename != NULL && file_count < MAX_FILES)
+                {
+                    // Save the filename to the array
+                    strncpy(file_names[file_count], filename, FILENAME_MAX_LENGTH - 1);
+                    file_names[file_count][FILENAME_MAX_LENGTH - 1] = '\0'; // Ensure null-termination
+                    file_count++;
+
+                    filename = strtok(NULL, "\n"); // Get the next filename
+                }
+            }
+            else if (bytesRead == -1 && errno != EAGAIN)
+            {
                 perror("Error reading from FIFO");
             }
-        } else {
+
+            // Process saved file names
+            for (int i = 0; i < file_count; i++)
+            {
+                printf("Calculator %d is processing file: %s\n", params->calculator_id, file_names[i]);
+                calculate_csv_file(file_names[i], params->calculator_id);
+            }
+
+            // Clear the array after processing
+            file_count = 0;
+        }
+        else
+        {
             pthread_mutex_unlock(&shared_memory->file_mutex);
             usleep(1000); // Sleep for 1ms to avoid high CPU usage
         }
     }
 
     close(fifo_fd);
-    close(fifo_fd_move);
     return NULL;
 }
+
+
+// void *calculator_thread(void *arg)
+// {
+//     CalculatorParams *params = (CalculatorParams *)arg;
+
+//     int fifo_fd = open(FIFO_PATH, O_RDONLY | O_NONBLOCK);
+//     if (fifo_fd < 0)
+//     {
+//         perror("Error opening FIFO for reading");
+//         return NULL;
+//     }
+//     int fifo_fd_move = open(FIFO_PATH_MOVE, O_WRONLY);
+//     if (fifo_fd_move < 0)
+//     {
+//         perror("Error opening FIFO for writing");
+//         close(fifo_fd);
+//         return NULL;
+//     }
+
+//     while (1)
+//     {
+//         pthread_mutex_lock(&shared_memory->file_mutex);
+//         // printf("Calculator %d is processing file: \n", params->calculator_id);
+
+//         if (shared_memory->file_count > shared_memory->num_calculators)
+//         {
+
+//             shared_memory->num_calculators++;
+//             char buffer[256];
+//             ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
+
+//             pthread_mutex_unlock(&shared_memory->file_mutex);
+
+//             if (bytesRead > 0)
+//             {
+//                 buffer[bytesRead] = '\0'; // Null-terminate the string
+//                 printf("Calculator %d read from FIFO: %s\n", params->calculator_id, buffer);
+
+//                 // Tokenize and process each filename
+//                 char *filename = strtok(buffer, "\n"); // Split by newline
+//                 while (filename != NULL)
+//                 {
+//                     // Create a local copy of the filename
+//                     char temp_filename[256];
+//                     strncpy(temp_filename, filename, sizeof(temp_filename) - 1);
+//                     temp_filename[sizeof(temp_filename) - 1] = '\0'; // Ensure null-termination
+
+//                     printf("Calculator is processing file: %s    is is  %s \n", temp_filename,filename);
+
+//                     // Process the file using the temporary copy
+//                     calculate_csv_file(temp_filename, params->calculator_id);
+
+//                     // Get the next filename
+//                     filename = strtok(NULL, "\n");
+//                 }
+//             }
+
+//             else if (bytesRead == -1 && errno != EAGAIN)
+//             {
+//                 perror("Error reading from FIFO");
+//             }
+//         }
+//         else
+//         {
+//             pthread_mutex_unlock(&shared_memory->file_mutex);
+//             usleep(1000); // Sleep for 1ms to avoid high CPU usage
+//         }
+//     }
+
+//     close(fifo_fd);
+//     close(fifo_fd_move);
+//     return NULL;
+// }
 
 // void calculate_csv_file(const char *filename, int calculator_id) {
 //     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));

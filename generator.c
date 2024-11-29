@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include "generator.h"
 
+
+
+
 // Function to initialize the semaphore and shared memory
 void init_semaphore()
 {
@@ -139,12 +142,12 @@ void generate_csv_file(int generator_id)
         return;
     }
  
-
     // Write the file name to the FIFO
     if (write(fifo_fd, filename, strlen(filename)) < 0)
     {
         perror("Error writing to FIFO");
     }
+    write(fifo_fd, "\n", 1);
 
     // Close the FIFO
     close(fifo_fd);
