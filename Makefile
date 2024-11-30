@@ -5,8 +5,8 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2
 
 # Define the source files and the target executable
-SRC = main.c Animation.c generator.c calculator.c mover.c
-OBJ = main.o Animation.o generator.o calculator.o mover.o
+SRC = main.c Animation.c generator.c calculator.c mover.c inspector.c
+OBJ = main.o Animation.o generator.o calculator.o mover.o inspector.o
 TARGET = globel
 
 # Default target to compile the program
@@ -31,6 +31,9 @@ calculator.o: calculator.c
 
 mover.o: mover.c
 	$(CC) $(CFLAGS) -c mover.c
+
+inspector.o: inspector.c inspector.h
+	$(CC) $(CFLAGS) -c inspector.c
 
 # Run the program
 run: $(TARGET)

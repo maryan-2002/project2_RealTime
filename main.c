@@ -3,7 +3,7 @@
 #include "generator.h"
 #include "calculator.h"
 #include "mover.h"
-#include "inspector.c"
+#include "inspector.h"
 
 // Global variables for configuration
 int min_rows = DEFAULT_MIN_ROWS;
@@ -17,6 +17,13 @@ int unprocessed_value = MAX_TIME_VALUE;
 int backup_value = MAX_BACKUP;
 int delete_value = MAX_BACKUP;
 
+int num_generators = DEFAULT_GENERATORS;
+int num_calculators = DEFAULT_GENERATORS;
+int num_movers = 10; // Default number of movers is 10
+int num_inspectors = 10;
+int min_time = DEFAULT_MIN_TIME;
+int max_time = DEFAULT_MAX_TIME;
+
 pthread_mutex_t fifo_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_inspector = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_backup = PTHREAD_MUTEX_INITIALIZER;
@@ -27,51 +34,92 @@ int sem_id;
 struct MEMORY *shared_memory; // Shared memory pointer
 struct SharedCalculators calc;
 
-int main(int argc, char *argv[])
+// Function to read arguments from the file
+int read_arguments_from_file(const char *filename)
 {
-
-    int num_generators = DEFAULT_GENERATORS;
-    int num_calculators = DEFAULT_GENERATORS;
-    int num_movers = 10; // Default number of movers is 10
-    int num_inspectors = 10;
-    int min_time = DEFAULT_MIN_TIME;
-    int max_time = DEFAULT_MAX_TIME;
-
-    printf("number of args = %d\n", argc);
-    // Parse user input for number of generators and time range
-    if (argc > 1)
-        num_generators = atoi(argv[1]);
-    if (argc > 2)
-        min_time = atoi(argv[2]);
-    if (argc > 3)
-        max_time = atoi(argv[3]);
-
-    // Parse user input for the global CSV parameters
-    if (argc > 4)
-        min_rows = atoi(argv[4]);
-    if (argc > 5)
-        max_rows = atoi(argv[5]);
-    if (argc > 6)
-        min_cols = atoi(argv[6]);
-    if (argc > 7)
-        max_cols = atoi(argv[7]);
-    if (argc > 8)
-        min_value = atof(argv[8]);
-    if (argc > 9)
-        max_value = atof(argv[9]);
-    if (argc > 10)
-        miss_percentage = atoi(argv[10]);
-
-    // Parse user input for the number of movers (if provided)
-    if (argc > 11)
-        num_movers = atoi(argv[11]);
-
-    if (min_time > max_time)
+    FILE *file = fopen(filename, "r");
+    if (!file)
     {
-        fprintf(stderr, "Invalid time range: min_time should be <= max_time\n");
-        return EXIT_FAILURE;
+        perror("Error opening arguments file");
+        return -1;
     }
 
+    char line[256];
+    while (fgets(line, sizeof(line), file))
+    {
+        // Remove newline characters from the line
+        line[strcspn(line, "\n")] = 0;
+
+        // Split by the colon ":"
+        char *key = strtok(line, ":");
+        char *value = strtok(NULL, ":");
+
+        if (key && value)
+        {
+            // Remove any leading or trailing spaces from key and value
+            while (*key == ' ')
+                key++;
+            while (*value == ' ')
+                value++;
+
+            // Check the key and assign the corresponding value
+            if (strcmp(key, "min_rows") == 0)
+            {
+                min_rows = atoi(value);
+            }
+            else if (strcmp(key, "max_rows") == 0)
+            {
+                max_rows = atoi(value);
+            }
+            else if (strcmp(key, "min_cols") == 0)
+            {
+                min_cols = atoi(value);
+            }
+            else if (strcmp(key, "max_cols") == 0)
+            {
+                max_cols = atoi(value);
+            }
+            else if (strcmp(key, "min_value") == 0)
+            {
+                min_value = atof(value);
+            }
+            else if (strcmp(key, "max_value") == 0)
+            {
+                max_value = atof(value);
+            }
+            else if (strcmp(key, "miss_percentage") == 0)
+            {
+                miss_percentage = atoi(value);
+            }
+            else if (strcmp(key, "num_generators") == 0)
+            {
+                num_generators = atoi(value);
+            }
+            else if (strcmp(key, "num_movers") == 0)
+            {
+                num_movers = atoi(value);
+            }
+            else if (strcmp(key, "min_time") == 0)
+            {
+                min_time = atoi(value);
+            }
+            else if (strcmp(key, "max_time") == 0)
+            {
+                max_time = atoi(value);
+            }
+        }
+    }
+
+    fclose(file);
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+     if (read_arguments_from_file("arguments.txt") != 0) {
+        return EXIT_FAILURE;
+    }
+   
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
     printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n",
            max_rows, max_cols, min_value, max_value, miss_percentage);
@@ -94,9 +142,10 @@ int main(int argc, char *argv[])
     initialize_fifo_mutex();
     pthread_t generator_threads[num_generators];
     GeneratorParams params[num_generators];
-
     for (int i = 0; i < num_generators; i++)
     {
+       
+        
         params[i].generator_id = i + 1;
         params[i].min_time = min_time;
         params[i].max_time = max_time;
@@ -108,7 +157,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Create threads for each file calculator
+    // // Create threads for each file calculator
     pthread_t calculator_threads[num_calculators];
     CalculatorParams calculator_params[num_calculators];
 
@@ -124,17 +173,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    create_processed_directory();
-    // Create threads for each CSV file mover
-    pthread_t mover_threads[num_movers];
-    for (int i = 0; i < num_movers; i++)
-    {
-        if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
-        {
-            perror("Failed to create mover thread");
-            return EXIT_FAILURE;
-        }
-    }
+    // create_processed_directory();
+    // // Create threads for each CSV file mover
+    // pthread_t mover_threads[num_movers];
+    // for (int i = 0; i < num_movers; i++)
+    // {
+    //     if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
+    //     {
+    //         perror("Failed to create mover thread");
+    //         return EXIT_FAILURE;
+    //     }
+    // }
 
     pthread_t inspector_threads[num_inspectors];
     struct SharedData shared_data = {0};
@@ -154,17 +203,17 @@ int main(int argc, char *argv[])
         pthread_join(generator_threads[i], NULL);
     }
 
-    // Join calculator threads
-    for (int i = 0; i < num_calculators; i++)
-    {
-        pthread_join(calculator_threads[i], NULL);
-    }
+    // // Join calculator threads
+    // for (int i = 0; i < num_calculators; i++)
+    // {
+    //     pthread_join(calculator_threads[i], NULL);
+    // }
 
-    // Join mover threads
-    for (int i = 0; i < num_movers; i++)
-    {
-        pthread_join(mover_threads[i], NULL);
-    }
+    // // Join mover threads
+    // for (int i = 0; i < num_movers; i++)
+    // {
+    //     pthread_join(mover_threads[i], NULL);
+    // }
 
     return EXIT_SUCCESS;
 }

@@ -66,9 +66,11 @@ void generate_csv_file(int generator_id)
     {
         mkdir("home", 0777); // Create the "home" directory with full permissions
     }
-
+     //printf("Current time: %s", ctime(&(time_t){time(NULL)}));  // Print current time in one line
     // Protect shared resource (file_count) with semaphore
     semop(sem_id, &acquire, 1); // Wait for access to the file count
+    //printf("Current time: %s", ctime(&(time_t){time(NULL)}));  // Print current time in one line
+
 
     // Get the current file count from shared memory
     int file_count = shared_memory->file_count;
@@ -91,6 +93,8 @@ void generate_csv_file(int generator_id)
 
     // Release semaphore after updating the shared resource
     semop(sem_id, &release, 1); // Release access to the file count
+    //printf("Current time: %s", ctime(&(time_t){time(NULL)}));  // Print current time in one line
+
 
     // Generate a random number of rows and columns within the global range
     int rows = rand() % (max_rows - min_rows + 1) + min_rows;
@@ -134,7 +138,7 @@ void generate_csv_file(int generator_id)
     fclose(file);
     printf("Generator %d created file: %s with %d rows and %d columns\n", generator_id, filename, rows, cols);
 
-    // Open the FIFO for writing
+    // // Open the FIFO for writing
     int fifo_fd = open(FIFO_PATH, O_WRONLY);
     if (fifo_fd < 0)
     {
@@ -160,9 +164,9 @@ void *file_generator(void *arg)
 
     while (1)
     {
+        generate_csv_file(params->generator_id);
         int wait_time = rand() % (params->max_time - params->min_time + 1) + params->min_time;
         sleep(wait_time);
-        generate_csv_file(params->generator_id);
     }
 
     return NULL;

@@ -4,6 +4,7 @@
 #include "globel.c"
 #define _DEFAULT_SOURCE
 #include <dirent.h>
+#define BACKUP_DIR "home/Backup"
 
 void create_directory_if_not_exists(const char *dir_name)
 {
