@@ -15,7 +15,7 @@ int max_value = DEFAULT_MAX_VALUE;
 int miss_percentage = DEFAULT_MISS_PERCENTAGE;
 int unprocessed_value = MAX_TIME_VALUE;
 int backup_value = MAX_BACKUP;
-int delete_value = MAX_BACKUP;
+int delete_value = MAX_TIME_VALUE;
 
 int num_generators = DEFAULT_GENERATORS;
 int num_calculators = DEFAULT_GENERATORS;
@@ -28,6 +28,12 @@ int num_type1=1;
 int num_type2=1;
 int num_type3=1;
 int age_limit= 86400;
+
+procees_th = 100;
+unprocees_th = 100;
+backup_th = 100;
+delete_th = 100;
+runtime_th = 60;
 
 pthread_mutex_t fifo_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_inspector = PTHREAD_MUTEX_INITIALIZER;
@@ -128,6 +134,26 @@ int read_arguments_from_file(const char *filename)
             {
                 age_limit = atoi(value);
             }
+            else if (strcmp(key, "procees_th") == 0)
+            {
+                procees_th = atoi(value);
+            }
+            else if (strcmp(key, "unprocees_th") == 0)
+            {
+                unprocees_th = atoi(value);
+            }
+            else if (strcmp(key, "backup_th") == 0)
+            {
+                backup_th = atoi(value);
+            }
+            else if (strcmp(key, "delete_th") == 0)
+            {
+                delete_th = atoi(value);
+            }
+            else if (strcmp(key, "runtime_th") == 0)
+            {
+                runtime_th = atoi(value);
+            }
         }
     }
 
@@ -135,6 +161,32 @@ int read_arguments_from_file(const char *filename)
     return 0;
 }
 
+// Function to kill all threads and exit
+void kill_all_and_exit() {
+    // Cancel generator threads
+    for (int i = 0; i < num_generators; i++) {
+        pthread_cancel(generator_threads[i]);
+    }
+
+    // Cancel calculator threads
+    for (int i = 0; i < num_calculators; i++) {
+        pthread_cancel(calculator_threads[i]);
+    }
+
+    // Cancel mover threads
+    for (int i = 0; i < num_movers; i++) {
+        pthread_cancel(mover_threads[i]);
+    }
+
+    printf("All threads terminated forcefully. Exiting program.\n");
+
+    // Free dynamically allocated memory
+    free(generator_threads);
+    free(calculator_threads);
+    free(mover_threads);
+
+    exit(EXIT_SUCCESS);
+}
 int main(int argc, char *argv[])
 {
      if (read_arguments_from_file("arguments.txt") != 0) {
@@ -266,7 +318,7 @@ int main(int argc, char *argv[])
 
     }
 
-
+    
     for (int i = 0; i < num_generators; i++)
     {
         pthread_join(generator_threads[i], NULL);

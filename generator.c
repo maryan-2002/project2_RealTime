@@ -137,7 +137,6 @@ void generate_csv_file(int generator_id)
 
     fclose(file);
     printf("Generator %d created file: %s with %d rows and %d columns\n", generator_id, filename, rows, cols);
-
     // // Open the FIFO for writing
     int fifo_fd = open(FIFO_PATH, O_WRONLY);
     if (fifo_fd < 0)

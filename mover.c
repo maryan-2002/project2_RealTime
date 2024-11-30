@@ -4,7 +4,7 @@
 // Function to create the "Processed" directory if it does not exist
 int create_processed_directory()
 {
-    const char *dir = "./home/Processed";
+    const char *dir = "home/Processed";
     struct stat st = {0};
 
     if (stat(dir, &st) == -1)
@@ -80,7 +80,7 @@ void *mover_thread(void *arg)
         perror("Error opening FIFO for reading");
         return NULL;
     }
-
+    create_processed_directory();
     char buffer[MAX_FILENAME_LENGTH];
     while (1)
     {
@@ -112,7 +112,7 @@ void *mover_thread(void *arg)
                 move_file_to_processed(filename);
             }
         }
-        wait(15);
+        wait(10);
         // Unlock the mutex after reading the FIFO
         pthread_mutex_unlock(&fifo_mutex);
     }

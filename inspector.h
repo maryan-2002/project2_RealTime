@@ -5,7 +5,6 @@
 #define UNPROCESSED_DIR "home/UnProcessed"
 #define PROCESSED_DIR "home/Processed"
 #define MAX_FILENAME_LENGTH 256
-#define MAX_TIME_VALUE 86400
 
 struct SharedData {
     int unprocessed_count;
