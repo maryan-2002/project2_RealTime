@@ -42,7 +42,6 @@ void initialize_fifo_mutex()
 int move_file_to_processed(const char *filename)
 {
     const char *processed_dir = "home/Processed/";
-
     // Check if the file exists
     if (access(filename, F_OK) == -1)
     {
@@ -88,6 +87,7 @@ void *mover_thread(void *arg)
         // Lock the mutex to ensure mutual exclusion with the calculator thread
         pthread_mutex_lock(&fifo_mutex);
         // printf(" hiiii insid ethe miver \n");
+        wait(10);
 
         ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
         if (bytesRead > 0)
@@ -112,7 +112,7 @@ void *mover_thread(void *arg)
                 move_file_to_processed(filename);
             }
         }
-
+        wait(15);
         // Unlock the mutex after reading the FIFO
         pthread_mutex_unlock(&fifo_mutex);
     }

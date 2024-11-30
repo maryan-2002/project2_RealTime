@@ -123,8 +123,8 @@ void generate_csv_file(int generator_id)
             }
             else
             {
-                int random_value = get_random_value(min_value, max_value); // Get random float value
-                fprintf(file, "%d", random_value);                         // Write value directly to file
+                float random_value = get_random_value(min_value, max_value); // Get random float value
+                fprintf(file, "%.2f", random_value);                         // Write value directly to file
             }
 
             if (j < cols - 1)

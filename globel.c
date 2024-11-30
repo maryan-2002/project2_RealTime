@@ -12,7 +12,7 @@
 #define DEFAULT_MIN_VALUE 0.0
 #define DEFAULT_MAX_VALUE 100.0
 #define DEFAULT_MISS_PERCENTAGE 10
-#define MAX_BACKUP 10 
+#define MAX_BACKUP 5
 #define FIFO_PATH "/tmp/myfifo"
 #define FIFO_PATH_MOVE "/tmp/myfifo_move"  // New FIFO for mover
 #define HOME_DIR "home"
@@ -20,5 +20,5 @@
 #define PROCESSED_DIR "home/Processed"
 
 #define MAX_FILENAME_LENGTH 256
-#define MAX_TIME_VALUE 60
+#define MAX_TIME_VALUE 10
 #define LINE_BUFFER_SIZE 1024 

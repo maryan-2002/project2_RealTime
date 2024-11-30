@@ -1,21 +1,26 @@
 min_rows: 10
 max_rows: 100
-min_cols: 5
-max_cols: 50
+min_cols: 10
+max_cols: 100
 min_value: 0.0
-max_value: 3.0
+max_value: 100.0
 miss_percentage: 10
 unprocessed_value: 200
 backup_value: 100
 delete_value: 100
 
-num_generators: 6
-num_movers: 10
-num_calculators: 1
+num_generators: 5
+num_movers: 2
+num_calculators: 5
 num_inspectors: 10
 
-min_time: 1
-max_time: 5
+min_time: 10
+max_time: 20
+
+num_type1: 3
+num_type2: 3
+num_type3: 3
+age_limit: 2
 
 DEFAULT_MIN_ROWS: 10
 DEFAULT_MAX_ROWS: 100

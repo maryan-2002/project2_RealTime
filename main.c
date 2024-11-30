@@ -24,6 +24,11 @@ int num_inspectors = 10;
 int min_time = DEFAULT_MIN_TIME;
 int max_time = DEFAULT_MAX_TIME;
 
+int num_type1=1;
+int num_type2=1;
+int num_type3=1;
+int age_limit= 86400;
+
 pthread_mutex_t fifo_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_inspector = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_backup = PTHREAD_MUTEX_INITIALIZER;
@@ -107,6 +112,22 @@ int read_arguments_from_file(const char *filename)
             {
                 max_time = atoi(value);
             }
+            else if (strcmp(key, "num_type1") == 0)
+            {
+                num_type1 = atoi(value);
+            }
+            else if (strcmp(key, "num_type2") == 0)
+            {
+                num_type2 = atoi(value);
+            }
+            else if (strcmp(key, "num_type3") == 0)
+            {
+                num_type3 = atoi(value);
+            }
+            else if (strcmp(key, "age_limit") == 0)
+            {
+                age_limit = atoi(value);
+            }
         }
     }
 
@@ -173,31 +194,79 @@ int main(int argc, char *argv[])
         }
     }
 
-    // create_processed_directory();
-    // // Create threads for each CSV file mover
-    // pthread_t mover_threads[num_movers];
-    // for (int i = 0; i < num_movers; i++)
-    // {
-    //     if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
-    //     {
-    //         perror("Failed to create mover thread");
-    //         return EXIT_FAILURE;
-    //     }
-    // }
-
-    pthread_t inspector_threads[num_inspectors];
-    struct SharedData shared_data = {0};
-
-    for (int i = 0; i < num_inspectors; i++)
+    create_processed_directory();
+    // Create threads for each CSV file mover
+    pthread_t mover_threads[num_movers];
+    for (int i = 0; i < num_movers; i++)
     {
-        if (pthread_create(&inspector_threads[i], NULL, inspector_thread, &shared_data) != 0)
+        if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
         {
-            perror("Failed to create inspector thread");
+            perror("Failed to create mover thread");
             return EXIT_FAILURE;
         }
     }
 
+    pthread_t inspector_threads[num_inspectors];
+    struct SharedData shared_data = {0};
+
+    // for (int i = 0; i < num_inspectors; i++)
+    // {
+    //     if (pthread_create(&inspector_threads[i], NULL, inspector_thread, &shared_data) != 0)
+    //     {
+    //         perror("Failed to create inspector thread");
+    //         return EXIT_FAILURE;
+    //     }
+    // }
+
     // Join generator threads (optional, for continuous operation remove this part)
+
+    // Create threads for inspectors
+
+    pthread_t type1_threads[num_type1];
+
+    pthread_t type2_threads[num_type2];
+
+    pthread_t type3_threads[num_type3];
+
+
+    for (int i = 0; i < num_type1; i++) {
+
+        if (pthread_create(&type1_threads[i], NULL, inspector_thread_type_1, &age_limit) != 0) {
+
+            perror("Failed to create Type 1 inspector thread");
+
+            return EXIT_FAILURE;
+
+        }
+
+    }
+
+      for (int i = 0; i < num_type2; i++) {
+
+        if (pthread_create(&type2_threads[i], NULL, inspector_thread_type_2, &age_limit) != 0) {
+
+            perror("Failed to create Type 2 inspector thread");
+
+            return EXIT_FAILURE;
+
+        }
+
+    }
+
+
+    for (int i = 0; i < num_type3; i++) {
+
+        if (pthread_create(&type3_threads[i], NULL, inspector_thread_type_3, &age_limit) != 0) {
+
+            perror("Failed to create Type 3 inspector thread");
+
+            return EXIT_FAILURE;
+
+        }
+
+    }
+
+
     for (int i = 0; i < num_generators; i++)
     {
         pthread_join(generator_threads[i], NULL);
@@ -213,6 +282,24 @@ int main(int argc, char *argv[])
     // for (int i = 0; i < num_movers; i++)
     // {
     //     pthread_join(mover_threads[i], NULL);
+    // }
+
+    // // Join type1 inspector threads
+    // for (int i = 0; i < num_type1; i++)
+    // {
+    //     pthread_join(type1_threads[i], NULL);
+    // }
+
+    // // Join type2 inspector threads
+    // for (int i = 0; i < num_type2; i++)
+    // {
+    //     pthread_join(type2_threads[i], NULL);
+    // }
+
+    // // Join movtype3 inspectorer threads
+    // for (int i = 0; i < num_type3; i++)
+    // {
+    //     pthread_join(type3_threads[i], NULL);
     // }
 
     return EXIT_SUCCESS;

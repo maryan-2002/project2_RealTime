@@ -61,7 +61,8 @@ void inspect_and_move_csv_files(int age_in_seconds,  const char *source_dir, con
         }
 
         snprintf(filepath, sizeof(filepath), "%s/%s", source_dir, entry->d_name);
-
+        // printf(filepath);
+        // printf("\nthis is right?\n");
         if (stat(filepath, &file_stat) == 0 && S_ISREG(file_stat.st_mode))
         {
             if (is_csv_file(entry->d_name))
