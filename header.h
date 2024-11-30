@@ -32,6 +32,9 @@ extern int max_cols;
 extern int min_value;
 extern int max_value;
 extern int miss_percentage;
+extern int unprocessed_value;
+extern int  delete_value;
+extern int backup_value;
 
 // Data structure to hold generator parameters
 typedef struct {
@@ -44,6 +47,9 @@ typedef struct {
 struct MEMORY {
     int file_count;           // Shared file count (number of processed files)
     int num_calculators;      // Number of file calculators (threads)
+    int unprocessed_count;
+    int backup_count;
+    int deleted_count;
     pthread_mutex_t file_mutex;    // Mutex to synchronize file access
 };
 
@@ -66,6 +72,10 @@ extern int sem_id;
 extern struct MEMORY *shared_memory; // Shared memory pointer
 extern struct SharedCalculators calc;
 extern pthread_mutex_t fifo_mutex; 
+extern pthread_mutex_t shared_mutex_inspector ;
+extern pthread_mutex_t shared_mutex_backup;
+extern pthread_mutex_t shared_mutex_deleate ;
+
 
 struct MEMORYcalculator {
     int calculator_id;

@@ -63,22 +63,22 @@ void calculate_csv_file(const char *filename, int calculator_id)
         int column_index = 0;
 
         char *token = strtok(line, ",");
-        // while (token)
-        // {
-        //     while (*token == '\n' || *token == '\r')
-        //         token++;
+        while (token)
+        {
+            while (*token == '\n' || *token == '\r')
+                token++;
 
-        //     char *endptr;
-        //     double value = strtod(token, &endptr);
-        //     if (endptr != token && column_index < max_cols)
-        //     {
-        //         column_sums[column_index] += value;
-        //         column_counts[column_index]++;
-        //     }
+            char *endptr;
+            double value = strtod(token, &endptr);
+            if (endptr != token && column_index < max_cols)
+            {
+                column_sums[column_index] += value;
+                column_counts[column_index]++;
+            }
 
-        //     token = strtok(NULL, ",");
-        //     column_index++;
-      //  }
+            token = strtok(NULL, ",");
+            column_index++;
+        }
     }
 
     fclose(file);
@@ -124,8 +124,15 @@ void *calculator_thread(void *arg)
         return NULL;
     }
 
+    int fifo_fd_move = open(FIFO_PATH_MOVE, O_WRONLY); // Open the FIFO for writing
+    if (fifo_fd_move < 0)
+    {
+        perror("Error opening FIFO for writing");
+        return NULL;
+    }
+
     char file_names[MAX_FILES][FILENAME_MAX_LENGTH]; // Array to store file names
-    int file_count = 0; // Number of files stored in the array
+    int file_count = 0;                              // Number of files stored in the array
 
     while (1)
     {
@@ -133,7 +140,6 @@ void *calculator_thread(void *arg)
 
         if (shared_memory->file_count > shared_memory->num_calculators)
         {
-            shared_memory->num_calculators++;
 
             char buffer[1024]; // Temporary buffer to read from FIFO
             ssize_t bytesRead = read(fifo_fd, buffer, sizeof(buffer) - 1);
@@ -154,6 +160,9 @@ void *calculator_thread(void *arg)
 
                     filename = strtok(NULL, "\n"); // Get the next filename
                 }
+                shared_memory->num_calculators += file_count;
+
+                pthread_mutex_unlock(&shared_memory->file_mutex);
             }
             else if (bytesRead == -1 && errno != EAGAIN)
             {
@@ -165,6 +174,14 @@ void *calculator_thread(void *arg)
             {
                 printf("Calculator %d is processing file: %s\n", params->calculator_id, file_names[i]);
                 calculate_csv_file(file_names[i], params->calculator_id);
+                //pthread_mutex_lock(&fifo_mutex);
+                printf(" the number of file =%d\n", shared_memory->num_calculators);
+
+                if (write(fifo_fd_move, file_names[i], strlen(file_names[i])) < 0)
+                {
+                    perror("Error writing to FIFO");
+                }
+                write(fifo_fd_move, "\n", 1);
             }
 
             // Clear the array after processing
@@ -180,7 +197,6 @@ void *calculator_thread(void *arg)
     close(fifo_fd);
     return NULL;
 }
-
 
 // void *calculator_thread(void *arg)
 // {

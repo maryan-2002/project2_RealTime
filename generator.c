@@ -165,6 +165,5 @@ void *file_generator(void *arg)
         generate_csv_file(params->generator_id);
     }
 
-    //printf("hi     hi \n");
     return NULL;
 }
