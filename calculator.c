@@ -63,22 +63,22 @@ void calculate_csv_file(const char *filename, int calculator_id)
         int column_index = 0;
 
         char *token = strtok(line, ",");
-        // while (token)
-        // {
-        //     while (*token == '\n' || *token == '\r')
-        //         token++;
+        while (token)
+        {
+            while (*token == '\n' || *token == '\r')
+                token++;
 
-        //     char *endptr;
-        //     double value = strtod(token, &endptr);
-        //     if (endptr != token && column_index < max_cols)
-        //     {
-        //         column_sums[column_index] += value;
-        //         column_counts[column_index]++;
-        //     }
+            char *endptr;
+            double value = strtod(token, &endptr);
+            if (endptr != token && column_index < max_cols)
+            {
+                column_sums[column_index] += value;
+                column_counts[column_index]++;
+            }
 
-        //     token = strtok(NULL, ",");
-        //     column_index++;
-        //  }
+            token = strtok(NULL, ",");
+            column_index++;
+        }
     }
 
     fclose(file);
@@ -96,21 +96,31 @@ void calculate_csv_file(const char *filename, int calculator_id)
     newValue->num_rows--;
     printf("Number of Rows: %d\n", newValue->num_rows);
 
-    printf("Column Averages:\n");
-    // for (int i = 0; i < max_cols; i++)
-    // {
-    //     if (column_counts[i] > 0)
-    //     {
-    //         printf("  Column %d: %.2f\n", i + 1, newValue->column_averages[i]);
-    //     }
-    // }
+    printf("Column Averages: [");
+    for (int i = 0; i < max_cols; i++)
+    {
+        if (column_counts[i] > 0)
+        {
+            printf(" %.2f ", newValue->column_averages[i]);
+        }
+    }
+    
 
     free(column_sums);
     free(column_counts);
-    free(newValue->file_number);
-    free(newValue->column_averages);
-    free(newValue);
+
+    // Lock the mutex before modifying the shared structure
+    pthread_mutex_lock(&calc.mutex);
+
+    // Add the newValue to the beginning of the linked list
+    newValue->next = calc.calculators;
+    calc.calculators = newValue;
+
+    // Unlock the mutex after modification
+    pthread_mutex_unlock(&calc.mutex);
 }
+
+
 
 #define MAX_FILES 100
 #define FILENAME_MAX_LENGTH 256
@@ -193,3 +203,141 @@ void *calculator_thread(void *arg)
     close(fifo_fd);
     return NULL;
 }
+
+
+// void calculate_csv_file(const char *filename, int calculator_id)
+// {
+//     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
+//     if (!newValue)
+//     {
+//         perror("Failed to allocate memory for MEMORYcalculator");
+//         return;
+//     }
+
+//     newValue->calculator_id = calculator_id;
+//     newValue->file_number = malloc(strlen(filename) + 1);
+//     if (!newValue->file_number)
+//     {
+//         perror("Failed to allocate memory for file_number");
+//         free(newValue);
+//         return;
+//     }
+//     strcpy(newValue->file_number, filename);
+
+//     newValue->num_rows = 0;
+//     newValue->column_averages = calloc(max_cols, sizeof(double));
+//     if (!newValue->column_averages)
+//     {
+//         perror("Failed to allocate memory for column_averages");
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
+//     }
+//     newValue->next = NULL;
+
+//     FILE *file = fopen(filename, "r");
+//     if (!file)
+//     {
+//         perror("Error opening file");
+//         free(newValue->column_averages);
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
+//     }
+
+//     double *column_sums = calloc(max_cols, sizeof(double));
+//     int *column_counts = calloc(max_cols, sizeof(int));
+//     if (!column_sums || !column_counts)
+//     {
+//         perror("Failed to allocate memory for temporary arrays");
+//         free(column_sums);
+//         free(column_counts);
+//         fclose(file);
+//         free(newValue->column_averages);
+//         free(newValue->file_number);
+//         free(newValue);
+//         return;
+//     }
+
+//     char line[LINE_BUFFER_SIZE];
+//     while (fgets(line, sizeof(line), file))
+//     {
+//         newValue->num_rows++;
+//         int column_index = 0;
+
+//         char *token = strtok(line, ",");
+//         while (token)
+//         {
+//             while (*token == '\n' || *token == '\r')
+//                 token++;
+
+//             char *endptr;
+//             double value = strtod(token, &endptr);
+//             if (endptr != token && column_index < max_cols)
+//             {
+//                 column_sums[column_index] += value;
+//                 column_counts[column_index]++;
+//             }
+
+//             token = strtok(NULL, ",");
+//             column_index++;
+//         }
+//     }
+
+//     fclose(file);
+
+//     for (int i = 0; i < max_cols; i++)
+//     {
+//         if (column_counts[i] > 0)
+//         {
+//             newValue->column_averages[i] = column_sums[i] / column_counts[i];
+
+//             // Lock the shared structure
+//             pthread_mutex_lock(&calc.mutex);
+
+//             int min_updated = 0, max_updated = 0;
+
+//             // Check and update min
+//             if (newValue->column_averages[i] < calc.min_average)
+//             {
+//                 calc.min_average = newValue->column_averages[i];
+//                 calc.min_column = i;
+//                 strncpy(calc.min_file, filename, sizeof(calc.min_file));
+//                 min_updated = 1;
+//             }
+
+//             // Check and update max
+//             if (newValue->column_averages[i] > calc.max_average)
+//             {
+//                 calc.max_average = newValue->column_averages[i];
+//                 calc.max_column = i;
+//                 strncpy(calc.max_file, filename, sizeof(calc.max_file));
+//                 max_updated = 1;
+//             }
+
+//             // Print updates only if there is a change
+//             if (min_updated)
+//             {
+//                 printf("[UPDATED MIN] New Min: %.2f (Column: %d, File: %s)\n",
+//                        calc.min_average, calc.min_column, calc.min_file);
+//             }
+
+//             if (max_updated)
+//             {
+//                 printf("[UPDATED MAX] New Max: %.2f (Column: %d, File: %s)\n",
+//                        calc.max_average, calc.max_column, calc.max_file);
+//             }
+
+//             pthread_mutex_unlock(&calc.mutex);
+//         }
+//     }
+
+//     free(column_sums);
+//     free(column_counts);
+
+//     // Add newValue to the linked list
+//     pthread_mutex_lock(&calc.mutex);
+//     newValue->next = calc.calculators;
+//     calc.calculators = newValue;
+//     pthread_mutex_unlock(&calc.mutex);
+// }

@@ -60,36 +60,34 @@ void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, cons
         }
 
         snprintf(filepath, sizeof(filepath), "%s/%s", source_dir, entry->d_name);
-    //     // printf(filepath);
-    //     // printf("\nthis is right?\n");
-    //     if (stat(filepath, &file_stat) == 0 && S_ISREG(file_stat.st_mode))
-    //     {
-    //         if (is_csv_file(entry->d_name))
-    //         {
-    //             if (is_file_older_than(filepath, age_in_seconds))
-    //             {
-    //                 snprintf(destpath, sizeof(destpath), "%s/%s", dest_dir, entry->d_name);
-    //                 if (rename(filepath, destpath) == -1)
-    //                 {
-    //                     perror("Failed to move file");
-    //                 }
-    //                 else
-    //                 {
-    //                     pthread_mutex_lock(&shared_mutex_inspector);
-    //                     shared_memory->unprocessed_count++;
-    //                     printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
+        if (stat(filepath, &file_stat) == 0 && S_ISREG(file_stat.st_mode))
+        {
+            if (is_csv_file(entry->d_name))
+            {
+                if (is_file_older_than(filepath, age_in_seconds))
+                {
+                    snprintf(destpath, sizeof(destpath), "%s/%s", dest_dir, entry->d_name);
+                    if (rename(filepath, destpath) == -1)
+                    {
+                        perror("Failed to move file");
+                    }
+                    else
+                    {
+                        pthread_mutex_lock(&shared_mutex_inspector);
+                        shared_memory->unprocessed_count++;
+                        //printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
 
-    //                     // if (shared_memory->unprocessed_count == unprocees_th)
-    //                     // {
+                        if (shared_memory->unprocessed_count == unprocees_th)
+                        {
+                            printf("End of the grogram\n");
 
-    //                     //     kill_all_and_exit();
-    //                     // }
-    //                     pthread_mutex_unlock(&shared_mutex_inspector);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+                            kill_all_and_exit();
+                        }
+                        pthread_mutex_unlock(&shared_mutex_inspector);
+                    }
+                }
+            }
+        }
     }
     closedir(dir);
 }
@@ -117,8 +115,6 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
         }
 
         snprintf(filepath, sizeof(filepath), "%s/%s", source_dir, entry->d_name);
-        // printf(filepath);
-        // printf("\nthis is right?\n");
         if (stat(filepath, &file_stat) == 0 && S_ISREG(file_stat.st_mode))
         {
             if (is_csv_file(entry->d_name))
@@ -134,12 +130,14 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
                     {
                         pthread_mutex_lock(&shared_mutex_backup);
                         shared_memory->backup_count++;
-                        printf(" the number of backup file is : %d \n", shared_memory->backup_count);
+                        //printf(" the number of backup file is : %d \n", shared_memory->backup_count);
 
-                        // if (shared_memory->backup_count == backup_th)
-                        // {
-                        //     kill_all_and_exit();
-                        // }
+                        if (shared_memory->backup_count == backup_th)
+                        {
+                            printf("End of the grogram\n");
+
+                            kill_all_and_exit();
+                        }
                         pthread_mutex_unlock(&shared_mutex_backup);
                     }
                 }
@@ -184,13 +182,15 @@ void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
                     }
                     else
                     {
+
                         pthread_mutex_lock(&shared_mutex_deleate);
                         shared_memory->deleted_count++;
-                        printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
-                        // if (shared_memory->deleted_count == delete_th)
-                        // {
-                        //     kill_all_and_exit();
-                        // }
+                        //printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
+                        if (shared_memory->deleted_count == delete_th)
+                        {
+                            printf("End of the grogram\n");
+                            kill_all_and_exit();
+                        }
                         pthread_mutex_unlock(&shared_mutex_deleate);
                     }
                 }

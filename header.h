@@ -106,10 +106,17 @@ struct MEMORYcalculator {
     struct MEMORYcalculator *next;  // Pointer to the next node
 };
 
-// Shared array of MEMORYcalculator with mutex
 struct SharedCalculators {
-    struct MEMORYcalculator *calculators; // Array of MEMORYcalculator
-    pthread_mutex_t mutex;               // Mutex for synchronization
+    struct MEMORYcalculator *calculators; // Linked list of MEMORYcalculator nodes
+    double min_average;                   // Minimum average value
+    int min_column;                       // Column index of the minimum
+    char min_file[256];                   // File name of the minimum
+
+    double max_average;                   // Maximum average value
+    int max_column;                       // Column index of the maximum
+    char max_file[256];                   // File name of the maximum
+
+    pthread_mutex_t mutex;                // Mutex for synchronization
 };
 
 extern void kill_all_and_exit();

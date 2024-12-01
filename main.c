@@ -31,7 +31,7 @@ int age_limit = 86400;
 
 int procees_th = 50;
 int unprocees_th = 100;
-int backup_th = 100;
+int backup_th = 20;
 int delete_th = 100;
 int runtime_th = 60;
 
@@ -171,7 +171,7 @@ int read_arguments_from_file(const char *filename)
 // Function to kill all threads and exit
 void kill_all_and_exit()
 {
-    fflush(stdout);
+    // fflush(stdout);
     // Cancel generator threads
     for (int i = 0; i < num_generators; i++)
     {
@@ -193,14 +193,14 @@ void kill_all_and_exit()
     {
         pthread_cancel(type1_threads[i]);
     }
-    for (int i = 0; i < num_type2; i++)
-    {
-        pthread_cancel(type2_threads[i]);
-    }
-    for (int i = 0; i < num_type3; i++)
-    {
-        pthread_cancel(type3_threads[i]);
-    }
+    // for (int i = 0; i < num_type2; i++)
+    // {
+    //     pthread_cancel(type2_threads[i]);
+    // }
+    // for (int i = 0; i < num_type3; i++)
+    // {
+    //     pthread_cancel(type3_threads[i]);
+    // }
 
     if (unlink(FIFO_PATH) < 0)
     {
@@ -220,12 +220,13 @@ void kill_all_and_exit()
         printf("FIFO %s deleted successfully.\n", FIFO_PATH_MOVE);
     }
 
+    printf("\n\n END PROGRAM \n");
     printf("All threads terminated forcefully. Exiting program.\n");
     system("rm -r " UNPROCESSED_DIR);
     system("rm -r " PROCESSED_DIR);
-    
     exit(EXIT_SUCCESS);
 }
+
 int main(int argc, char *argv[])
 {
     if (read_arguments_from_file("arguments.txt") != 0)
@@ -234,23 +235,20 @@ int main(int argc, char *argv[])
     }
 
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
-    printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n",
-           max_rows, max_cols, min_value, max_value, miss_percentage);
-    printf("Starting %d CSV file movers.\n", num_movers);
+    printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
 
     // Seed random number generator
     srand(time(NULL));
 
     if (mkfifo(FIFO_PATH, 0666) < 0)
     {
-        perror("Error creating FIFO");
+        // perror("Error creating FIFO");
     }
     if (mkfifo(FIFO_PATH_MOVE, 0666) < 0)
     {
-        perror("Error creating FIFO for movers");
+        // perror("Error creating FIFO for movers");
     }
 
-    // Create threads for each file generator
     init_semaphore();
     initialize_fifo_mutex();
     GeneratorParams params[num_generators];
@@ -328,42 +326,42 @@ int main(int argc, char *argv[])
         }
     }
     sleep(runtime_th * 60);
-    printf(" timmmmme   over \n");
+    printf(" time   over \n");
     // kill_all_and_exit();
     for (int i = 0; i < num_generators; i++)
     {
         pthread_join(generator_threads[i], NULL);
     }
 
-    // // Join calculator threads
-    // for (int i = 0; i < num_calculators; i++)
-    // {
-    //     pthread_join(calculator_threads[i], NULL);
-    // }
+    // Join calculator threads
+    for (int i = 0; i < num_calculators; i++)
+    {
+        pthread_join(calculator_threads[i], NULL);
+    }
 
-    // // Join mover threads
-    // for (int i = 0; i < num_movers; i++)
-    // {
-    //     pthread_join(mover_threads[i], NULL);
-    // }
+    // Join mover threads
+    for (int i = 0; i < num_movers; i++)
+    {
+        pthread_join(mover_threads[i], NULL);
+    }
 
-    // // Join type1 inspector threads
-    // for (int i = 0; i < num_type1; i++)
-    // {
-    //     pthread_join(type1_threads[i], NULL);
-    // }
+    // Join type1 inspector threads
+    for (int i = 0; i < num_type1; i++)
+    {
+        pthread_join(type1_threads[i], NULL);
+    }
 
-    // // Join type2 inspector threads
-    // for (int i = 0; i < num_type2; i++)
-    // {
-    //     pthread_join(type2_threads[i], NULL);
-    // }
+    // Join type2 inspector threads
+    for (int i = 0; i < num_type2; i++)
+    {
+        pthread_join(type2_threads[i], NULL);
+    }
 
-    // // Join movtype3 inspectorer threads
-    // for (int i = 0; i < num_type3; i++)
-    // {
-    //     pthread_join(type3_threads[i], NULL);
-    // }
+    // Join movtype3 inspectorer threads
+    for (int i = 0; i < num_type3; i++)
+    {
+        pthread_join(type3_threads[i], NULL);
+    }
 
     return EXIT_SUCCESS;
 }
