@@ -44,6 +44,10 @@ void init_semaphore()
     // Initialize file_count in shared memory
     shared_memory->file_count = 0;
     shared_memory->num_calculators = 0;
+        shared_memory->backup_count = 0;
+    shared_memory->deleted_count = 0;
+    shared_memory->unprocessed_count = 0;
+
     pthread_mutexattr_t mutex_attr;
     pthread_mutexattr_init(&mutex_attr);
     pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
@@ -71,7 +75,6 @@ void generate_csv_file(int generator_id)
     semop(sem_id, &acquire, 1); // Wait for access to the file count
     //printf("Current time: %s", ctime(&(time_t){time(NULL)}));  // Print current time in one line
 
-
     // Get the current file count from shared memory
     int file_count = shared_memory->file_count;
 
@@ -90,12 +93,8 @@ void generate_csv_file(int generator_id)
 
     // Increment the file count in shared memory
     shared_memory->file_count = file_count + 1;
-
     // Release semaphore after updating the shared resource
     semop(sem_id, &release, 1); // Release access to the file count
-    //printf("Current time: %s", ctime(&(time_t){time(NULL)}));  // Print current time in one line
-
-
     // Generate a random number of rows and columns within the global range
     int rows = rand() % (max_rows - min_rows + 1) + min_rows;
     int cols = rand() % (max_cols - min_cols + 1) + min_cols;
@@ -163,9 +162,9 @@ void *file_generator(void *arg)
 
     while (1)
     {
-        generate_csv_file(params->generator_id);
         int wait_time = rand() % (params->max_time - params->min_time + 1) + params->min_time;
         sleep(wait_time);
+        generate_csv_file(params->generator_id);
     }
 
     return NULL;

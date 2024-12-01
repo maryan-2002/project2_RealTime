@@ -14,7 +14,6 @@ void create_directory_if_not_exists(const char *dir_name)
         if (mkdir(dir_name, 0755) == -1)
         {
             perror("Failed to create directory");
-            exit(EXIT_FAILURE);
         }
     }
 }
@@ -37,7 +36,64 @@ int is_file_older_than(const char *filepath, int age_in_seconds)
     return (current_time - file_stat.st_mtime) > age_in_seconds;
 }
 
-void inspect_and_move_csv_files(int age_in_seconds,  const char *source_dir, const char *dest_dir)
+void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, const char *dest_dir)
+{
+    DIR *dir = opendir(source_dir);
+    if (!dir)
+    {
+        perror("Failed to open source directory");
+        return;
+    }
+
+    create_directory_if_not_exists(dest_dir);
+
+    struct dirent *entry;
+    char filepath[MAX_FILENAME_LENGTH];
+    char destpath[MAX_FILENAME_LENGTH];
+    struct stat file_stat;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        snprintf(filepath, sizeof(filepath), "%s/%s", source_dir, entry->d_name);
+    //     // printf(filepath);
+    //     // printf("\nthis is right?\n");
+    //     if (stat(filepath, &file_stat) == 0 && S_ISREG(file_stat.st_mode))
+    //     {
+    //         if (is_csv_file(entry->d_name))
+    //         {
+    //             if (is_file_older_than(filepath, age_in_seconds))
+    //             {
+    //                 snprintf(destpath, sizeof(destpath), "%s/%s", dest_dir, entry->d_name);
+    //                 if (rename(filepath, destpath) == -1)
+    //                 {
+    //                     perror("Failed to move file");
+    //                 }
+    //                 else
+    //                 {
+    //                     pthread_mutex_lock(&shared_mutex_inspector);
+    //                     shared_memory->unprocessed_count++;
+    //                     printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
+
+    //                     // if (shared_memory->unprocessed_count == unprocees_th)
+    //                     // {
+
+    //                     //     kill_all_and_exit();
+    //                     // }
+    //                     pthread_mutex_unlock(&shared_mutex_inspector);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    }
+    closedir(dir);
+}
+void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, const char *dest_dir)
 {
     DIR *dir = opendir(source_dir);
     if (!dir)
@@ -72,12 +128,18 @@ void inspect_and_move_csv_files(int age_in_seconds,  const char *source_dir, con
                     snprintf(destpath, sizeof(destpath), "%s/%s", dest_dir, entry->d_name);
                     if (rename(filepath, destpath) == -1)
                     {
-                        perror("Failed to move file");
+                        // perror("Failed to move file");
                     }
                     else
                     {
                         pthread_mutex_lock(&shared_mutex_backup);
-                        shared_memory->unprocessed_count++;
+                        shared_memory->backup_count++;
+                        printf(" the number of backup file is : %d \n", shared_memory->backup_count);
+
+                        // if (shared_memory->backup_count == backup_th)
+                        // {
+                        //     kill_all_and_exit();
+                        // }
                         pthread_mutex_unlock(&shared_mutex_backup);
                     }
                 }
@@ -118,12 +180,17 @@ void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
                 {
                     if (remove(filepath) == -1)
                     {
-                        perror("Failed to delete file");
+                        // perror("Failed to delete file");
                     }
                     else
                     {
                         pthread_mutex_lock(&shared_mutex_deleate);
                         shared_memory->deleted_count++;
+                        printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
+                        // if (shared_memory->deleted_count == delete_th)
+                        // {
+                        //     kill_all_and_exit();
+                        // }
                         pthread_mutex_unlock(&shared_mutex_deleate);
                     }
                 }
@@ -147,7 +214,7 @@ void *inspector_thread_type_2(void *arg)
 {
     while (1)
     {
-        inspect_and_move_csv_files(MAX_BACKUP, PROCESSED_DIR, BACKUP_DIR);
+        inspect_and_move_csv_files2(MAX_BACKUP, PROCESSED_DIR, BACKUP_DIR);
         sleep(5);
     }
 }

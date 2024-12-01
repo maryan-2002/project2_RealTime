@@ -35,6 +35,27 @@ extern int miss_percentage;
 extern int unprocessed_value;
 extern int  delete_value;
 extern int backup_value;
+extern int procees_th ;
+extern int unprocees_th ;
+extern int backup_th ;
+extern int delete_th ;
+extern int runtime_th ;
+extern pthread_t generator_threads[30];
+extern pthread_t type1_threads[30];
+extern pthread_t type2_threads[30];
+extern pthread_t type3_threads[30];
+extern pthread_t mover_threads[30];
+extern pthread_t calculator_threads[30];
+extern  int num_generators ;
+extern int num_calculators;
+extern int num_movers ;
+extern int num_inspectors; 
+extern int min_time ;
+extern int max_time;
+
+extern int num_type1;
+extern int num_type2 ;
+extern int num_type3  ;
 
 // Data structure to hold generator parameters
 typedef struct {
@@ -90,5 +111,8 @@ struct SharedCalculators {
     struct MEMORYcalculator *calculators; // Array of MEMORYcalculator
     pthread_mutex_t mutex;               // Mutex for synchronization
 };
+
+extern void kill_all_and_exit();
+
 
 #endif

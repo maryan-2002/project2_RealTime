@@ -38,7 +38,6 @@ void initialize_fifo_mutex()
 #include <unistd.h>
 #include <stdio.h>
 
-
 int move_file_to_processed(const char *filename)
 {
     const char *processed_dir = "home/Processed/";
@@ -60,14 +59,13 @@ int move_file_to_processed(const char *filename)
     // Move the file using the rename function
     if (rename(filename, destination) == -1)
     {
-        perror("Failed to move file");
+       // perror("Failed to move file");
         return -1;
     }
 
     printf("File %s moved to Processed directory.\n", filename);
     return 0;
 }
-
 
 // Mover thread function that moves files after processing
 void *mover_thread(void *arg)

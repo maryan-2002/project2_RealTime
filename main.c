@@ -24,21 +24,28 @@ int num_inspectors = 10;
 int min_time = DEFAULT_MIN_TIME;
 int max_time = DEFAULT_MAX_TIME;
 
-int num_type1=1;
-int num_type2=1;
-int num_type3=1;
-int age_limit= 86400;
+int num_type1 = 1;
+int num_type2 = 1;
+int num_type3 = 1;
+int age_limit = 86400;
 
-procees_th = 100;
-unprocees_th = 100;
-backup_th = 100;
-delete_th = 100;
-runtime_th = 60;
+int procees_th = 50;
+int unprocees_th = 100;
+int backup_th = 100;
+int delete_th = 100;
+int runtime_th = 60;
 
 pthread_mutex_t fifo_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_inspector = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_backup = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shared_mutex_deleate = PTHREAD_MUTEX_INITIALIZER;
+pthread_t generator_threads[30];
+pthread_t type1_threads[30];
+pthread_t type2_threads[30];
+pthread_t type3_threads[30];
+pthread_t mover_threads[30];
+pthread_t calculator_threads[30];
+
 struct sembuf acquire = {0, -1, SEM_UNDO}, release = {0, 1, SEM_UNDO};
 // Shared semaphore ID
 int sem_id;
@@ -162,37 +169,70 @@ int read_arguments_from_file(const char *filename)
 }
 
 // Function to kill all threads and exit
-void kill_all_and_exit() {
+void kill_all_and_exit()
+{
+    fflush(stdout);
     // Cancel generator threads
-    for (int i = 0; i < num_generators; i++) {
+    for (int i = 0; i < num_generators; i++)
+    {
         pthread_cancel(generator_threads[i]);
     }
 
     // Cancel calculator threads
-    for (int i = 0; i < num_calculators; i++) {
+    for (int i = 0; i < num_calculators; i++)
+    {
         pthread_cancel(calculator_threads[i]);
     }
 
     // Cancel mover threads
-    for (int i = 0; i < num_movers; i++) {
+    for (int i = 0; i < num_movers; i++)
+    {
         pthread_cancel(mover_threads[i]);
+    }
+    for (int i = 0; i < num_type1; i++)
+    {
+        pthread_cancel(type1_threads[i]);
+    }
+    for (int i = 0; i < num_type2; i++)
+    {
+        pthread_cancel(type2_threads[i]);
+    }
+    for (int i = 0; i < num_type3; i++)
+    {
+        pthread_cancel(type3_threads[i]);
+    }
+
+    if (unlink(FIFO_PATH) < 0)
+    {
+        perror("Error deleting FIFO");
+    }
+    else
+    {
+        printf("FIFO %s deleted successfully.\n", FIFO_PATH);
+    }
+
+    if (unlink(FIFO_PATH_MOVE) < 0)
+    {
+        perror("Error deleting FIFO for movers");
+    }
+    else
+    {
+        printf("FIFO %s deleted successfully.\n", FIFO_PATH_MOVE);
     }
 
     printf("All threads terminated forcefully. Exiting program.\n");
-
-    // Free dynamically allocated memory
-    free(generator_threads);
-    free(calculator_threads);
-    free(mover_threads);
-
+    system("rm -r " UNPROCESSED_DIR);
+    system("rm -r " PROCESSED_DIR);
+    
     exit(EXIT_SUCCESS);
 }
 int main(int argc, char *argv[])
 {
-     if (read_arguments_from_file("arguments.txt") != 0) {
+    if (read_arguments_from_file("arguments.txt") != 0)
+    {
         return EXIT_FAILURE;
     }
-   
+
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
     printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n",
            max_rows, max_cols, min_value, max_value, miss_percentage);
@@ -213,12 +253,10 @@ int main(int argc, char *argv[])
     // Create threads for each file generator
     init_semaphore();
     initialize_fifo_mutex();
-    pthread_t generator_threads[num_generators];
     GeneratorParams params[num_generators];
     for (int i = 0; i < num_generators; i++)
     {
-       
-        
+
         params[i].generator_id = i + 1;
         params[i].min_time = min_time;
         params[i].max_time = max_time;
@@ -229,11 +267,9 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
     }
-
-    // // Create threads for each file calculator
-    pthread_t calculator_threads[num_calculators];
     CalculatorParams calculator_params[num_calculators];
 
+    // // Create threads for each file calculator
     for (int i = 0; i < num_calculators; i++)
     {
         calculator_params[i].calculator_id = i + 1;
@@ -246,9 +282,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    create_processed_directory();
     // Create threads for each CSV file mover
-    pthread_t mover_threads[num_movers];
     for (int i = 0; i < num_movers; i++)
     {
         if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
@@ -258,67 +292,44 @@ int main(int argc, char *argv[])
         }
     }
 
-    pthread_t inspector_threads[num_inspectors];
-    struct SharedData shared_data = {0};
+    for (int i = 0; i < num_type1; i++)
+    {
 
-    // for (int i = 0; i < num_inspectors; i++)
-    // {
-    //     if (pthread_create(&inspector_threads[i], NULL, inspector_thread, &shared_data) != 0)
-    //     {
-    //         perror("Failed to create inspector thread");
-    //         return EXIT_FAILURE;
-    //     }
-    // }
-
-    // Join generator threads (optional, for continuous operation remove this part)
-
-    // Create threads for inspectors
-
-    pthread_t type1_threads[num_type1];
-
-    pthread_t type2_threads[num_type2];
-
-    pthread_t type3_threads[num_type3];
-
-
-    for (int i = 0; i < num_type1; i++) {
-
-        if (pthread_create(&type1_threads[i], NULL, inspector_thread_type_1, &age_limit) != 0) {
+        if (pthread_create(&type1_threads[i], NULL, inspector_thread_type_1, &age_limit) != 0)
+        {
 
             perror("Failed to create Type 1 inspector thread");
 
             return EXIT_FAILURE;
-
         }
-
     }
 
-      for (int i = 0; i < num_type2; i++) {
+    for (int i = 0; i < num_type2; i++)
+    {
 
-        if (pthread_create(&type2_threads[i], NULL, inspector_thread_type_2, &age_limit) != 0) {
+        if (pthread_create(&type2_threads[i], NULL, inspector_thread_type_2, &age_limit) != 0)
+        {
 
             perror("Failed to create Type 2 inspector thread");
 
             return EXIT_FAILURE;
-
         }
-
     }
 
+    for (int i = 0; i < num_type3; i++)
+    {
 
-    for (int i = 0; i < num_type3; i++) {
-
-        if (pthread_create(&type3_threads[i], NULL, inspector_thread_type_3, &age_limit) != 0) {
+        if (pthread_create(&type3_threads[i], NULL, inspector_thread_type_3, &age_limit) != 0)
+        {
 
             perror("Failed to create Type 3 inspector thread");
 
             return EXIT_FAILURE;
-
         }
-
     }
-
-    
+    sleep(runtime_th * 60);
+    printf(" timmmmme   over \n");
+    // kill_all_and_exit();
     for (int i = 0; i < num_generators; i++)
     {
         pthread_join(generator_threads[i], NULL);
