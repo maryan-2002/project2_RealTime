@@ -55,10 +55,11 @@ void init_semaphore()
     pthread_mutexattr_destroy(&mutex_attr);
 }
 
+// Function to write formatted_filename into home.txt and other data to data.txt
 void write_to_file(int generator_id, const char *filename, int rows, int cols) {
-    FILE *file = fopen("home.txt", "a"); // Open for appending to add new lines to the file.
+    FILE *file = fopen("data.txt", "a"); // Open for appending to add new lines to data.txt
     if (file == NULL) {
-        perror("Error opening home.txt for writing");
+        perror("Error opening data.txt for writing");
         return;
     }
 
@@ -70,10 +71,20 @@ void write_to_file(int generator_id, const char *filename, int rows, int cols) {
         strcpy(formatted_filename, filename); // If "home/" is not present, keep the filename as is
     }
 
-    // Print the formatted data to the file
+    // Print the formatted data to data.txt
     fprintf(file,"%d,%s,%d,%d\n", generator_id, formatted_filename, rows, cols);
-    
     fclose(file);
+
+    // Now write the formatted_filename to home.txt
+    FILE *home_file = fopen("home.txt", "a");  // Open home.txt in append mode
+    if (home_file == NULL) {
+        perror("Error opening home.txt for writing");
+        return;
+    }
+
+    // Write the formatted_filename to home.txt
+    fprintf(home_file, "%s\n", formatted_filename);
+    fclose(home_file);
 }
 
 // Function to generate a random float in a given range

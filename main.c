@@ -58,6 +58,7 @@ int sem_id;
 struct MEMORY *shared_memory; // Shared memory pointer
 struct SharedCalculators calc;
 
+
 // Function to delete specific .txt files in the main directory
 void delete_txt_files_in_main_dir() {
     // List of files to delete
@@ -65,15 +66,20 @@ void delete_txt_files_in_main_dir() {
         "home.txt",
         "Backup.txt",
         "Processed.txt",
-        "UnProcessed.txt"
+        "UnProcessed.txt",
+        "delete.txt",  // Ensure 'Delete.txt' is listed here
+        "data.txt"
     };
 
     // Get the current working directory (main directory)
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 6; i++) {  // Update to delete 6 files
             char file_path[1024];
             snprintf(file_path, sizeof(file_path), "%s/%s", cwd, files_to_delete[i]);
+
+            // Debug: Print full file path
+            printf("Trying to delete: %s\n", file_path);
 
             // Check if the file exists before attempting to delete
             if (access(file_path, F_OK) == 0) {
@@ -83,7 +89,38 @@ void delete_txt_files_in_main_dir() {
                     perror("Error deleting file");
                 }
             } else {
-                printf("File %s not found.\n", file_path);
+                printf("File %s not found.\n", file_path);  // Debug: File not found
+            }
+        }
+    } else {
+        perror("getcwd() error");
+    }
+}
+
+// Function to create specific .txt files in the main directory
+void create_txt_files_in_main_dir() {
+    const char *files_to_create[] = {
+        "home.txt",
+        "Backup.txt",
+        "Processed.txt",
+        "UnProcessed.txt",
+        "delete.txt"   // Ensure 'Delete.txt' is correctly added here
+    };
+
+    // Get the current working directory (main directory)
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        for (int i = 0; i < 6; i++) {  // Update the iteration count to 6
+            char file_path[1024];
+            snprintf(file_path, sizeof(file_path), "%s/%s", cwd, files_to_create[i]);
+
+            // Create the file by opening it in write mode
+            FILE *file = fopen(file_path, "w");
+            if (file) {
+                printf("Created: %s\n", file_path);
+                fclose(file);  // Close the file
+            } else {
+                perror("Error creating file");
             }
         }
     } else {
@@ -304,7 +341,11 @@ void kill_all_and_exit()
 
 int main(int argc, char *argv[])
 {
+    // Step 1: Delete the .txt files
     delete_txt_files_in_main_dir();
+
+    // Step 2: Create the .txt files again after deletion
+    create_txt_files_in_main_dir();
 
     if (read_arguments_from_file("arguments.txt") != 0)
     {
@@ -322,17 +363,20 @@ int main(int argc, char *argv[])
         printf("Current working directory: %s\n", cwd);
 
         // Create paths by appending subdirectories to the current directory
-        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024];
+        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024],delete_dir[1024];
         snprintf(home_dir, sizeof(home_dir), "%s/home", cwd);
         snprintf(backup_dir, sizeof(backup_dir), "%s/home/Backup", cwd);
         snprintf(processed_dir, sizeof(processed_dir), "%s/home/Processed", cwd);
         snprintf(unprocessed_dir, sizeof(unprocessed_dir), "%s/home/UnProcessed", cwd);
+        snprintf(delete_dir, sizeof(delete_dir), "%s/home/Delete", cwd);
+        
 
         // Call the delete function for each directory
         delete_csv_files(home_dir);
         delete_csv_files(backup_dir);
         delete_csv_files(processed_dir);
         delete_csv_files(unprocessed_dir);
+        delete_csv_files(delete_dir);
     } else {
         perror("getcwd() error");
     }
