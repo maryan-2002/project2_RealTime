@@ -79,12 +79,12 @@ void delete_txt_files_in_main_dir() {
             snprintf(file_path, sizeof(file_path), "%s/%s", cwd, files_to_delete[i]);
 
             // Debug: Print full file path
-            printf("Trying to delete: %s\n", file_path);
+            // printf("Trying to delete: %s\n", file_path);
 
             // Check if the file exists before attempting to delete
             if (access(file_path, F_OK) == 0) {
                 if (unlink(file_path) == 0) {
-                    printf("Deleted: %s\n", file_path);
+                    // printf("Deleted: %s\n", file_path);
                 } else {
                     perror("Error deleting file");
                 }
@@ -117,7 +117,7 @@ void create_txt_files_in_main_dir() {
             // Create the file by opening it in write mode
             FILE *file = fopen(file_path, "w");
             if (file) {
-                printf("Created: %s\n", file_path);
+                // printf("Created: %s\n", file_path);
                 fclose(file);  // Close the file
             } else {
                 perror("Error creating file");
@@ -133,7 +133,7 @@ void delete_csv_files(const char *directory_path) {
     DIR *dir;
     struct dirent *entry;
 
-    printf("Trying to open directory: %s\n", directory_path);
+    // printf("Trying to open directory: %s\n", directory_path);
 
     if (access(directory_path, F_OK) != 0) {
         perror("Directory does not exist or cannot be accessed");
@@ -153,7 +153,7 @@ void delete_csv_files(const char *directory_path) {
                 snprintf(file_path, sizeof(file_path), "%s/%s", directory_path, entry->d_name);
 
                 if (unlink(file_path) == 0) {
-                    printf("Deleted: %s\n", file_path);
+                    // printf("Deleted: %s\n", file_path);
                 } else {
                     perror("Error deleting file");
                 }
@@ -349,16 +349,13 @@ int main(int argc, char *argv[])
 
        char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        // Print the current working directory for debugging
-        printf("Current working directory: %s\n", cwd);
 
         // Create paths by appending subdirectories to the current directory
-        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024],delete_dir[1024];
+        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024];
         snprintf(home_dir, sizeof(home_dir), "%s/home", cwd);
         snprintf(backup_dir, sizeof(backup_dir), "%s/home/Backup", cwd);
         snprintf(processed_dir, sizeof(processed_dir), "%s/home/Processed", cwd);
         snprintf(unprocessed_dir, sizeof(unprocessed_dir), "%s/home/UnProcessed", cwd);
-        snprintf(delete_dir, sizeof(delete_dir), "%s/home/Delete", cwd);
         
 
         // Call the delete function for each directory
@@ -366,7 +363,6 @@ int main(int argc, char *argv[])
         delete_csv_files(backup_dir);
         delete_csv_files(processed_dir);
         delete_csv_files(unprocessed_dir);
-        delete_csv_files(delete_dir);
     } else {
         perror("getcwd() error");
     }
