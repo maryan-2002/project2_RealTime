@@ -43,7 +43,7 @@ int allocatedRows = 0;
 int startRow = 0;           // Starting row for the visible table
 int maxVisibleRows = 6;     // Number of rows visible at a time
 const float rowHeight = 0.12f;  // Height of a row
-char filename[MAX_FILENAME_LEN] = "data.txt";
+char filename[MAX_FILENAME_LEN] = "home.txt";
 time_t lastModifiedTime = 0;
 
 float windowHeight = 800.0f; // Default window height

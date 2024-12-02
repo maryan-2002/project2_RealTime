@@ -56,9 +56,9 @@ void init_semaphore()
 }
 
 void write_to_file(int generator_id, const char *filename, int rows, int cols) {
-    FILE *file = fopen("data.txt", "a"); // Open for appending to add new lines to the file.
+    FILE *file = fopen("home.txt", "a"); // Open for appending to add new lines to the file.
     if (file == NULL) {
-        perror("Error opening data.txt for writing");
+        perror("Error opening home.txt for writing");
         return;
     }
 
