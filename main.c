@@ -58,47 +58,38 @@ int sem_id;
 struct MEMORY *shared_memory; // Shared memory pointer
 struct SharedCalculators calc;
 
-// Function to delete specific .txt files
-void delete_txt_files(const char *directory_path) {
-    DIR *dir;
-    struct dirent *entry;
+// Function to delete specific .txt files in the main directory
+void delete_txt_files_in_main_dir() {
+    // List of files to delete
+    const char *files_to_delete[] = {
+        "home.txt",
+        "Backup.txt",
+        "Processed.txt",
+        "UnProcessed.txt"
+    };
 
-    printf("Trying to open directory: %s\n", directory_path);
-
-    if (access(directory_path, F_OK) != 0) {
-        perror("Directory does not exist or cannot be accessed");
-        return;
-    }
-
-    dir = opendir(directory_path);
-    if (dir == NULL) {
-        perror("Error opening directory");
-        return;
-    }
-
-    // Iterate over the files in the directory
-    while ((entry = readdir(dir)) != NULL) {
-        // Check for the specific file names
-        if (strcasecmp(entry->d_name, "home.txt") == 0 || 
-            strcasecmp(entry->d_name, "Backup.txt") == 0 ||
-            strcasecmp(entry->d_name, "Processed.txt") == 0 ||
-            strcasecmp(entry->d_name, "UnProcessed.txt") == 0) {
-                
+    // Get the current working directory (main directory)
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        for (int i = 0; i < 4; i++) {
             char file_path[1024];
-            snprintf(file_path, sizeof(file_path), "%s/%s", directory_path, entry->d_name);
+            snprintf(file_path, sizeof(file_path), "%s/%s", cwd, files_to_delete[i]);
 
-            // Delete the file
-            if (unlink(file_path) == 0) {
-                printf("Deleted: %s\n", file_path);
+            // Check if the file exists before attempting to delete
+            if (access(file_path, F_OK) == 0) {
+                if (unlink(file_path) == 0) {
+                    printf("Deleted: %s\n", file_path);
+                } else {
+                    perror("Error deleting file");
+                }
             } else {
-                perror("Error deleting file");
+                printf("File %s not found.\n", file_path);
             }
         }
+    } else {
+        perror("getcwd() error");
     }
-
-    closedir(dir);
 }
-
 
 // Function to delete .csv files in a directory
 void delete_csv_files(const char *directory_path) {
@@ -313,6 +304,8 @@ void kill_all_and_exit()
 
 int main(int argc, char *argv[])
 {
+    delete_txt_files_in_main_dir();
+
     if (read_arguments_from_file("arguments.txt") != 0)
     {
         return EXIT_FAILURE;
@@ -334,12 +327,6 @@ int main(int argc, char *argv[])
         snprintf(backup_dir, sizeof(backup_dir), "%s/home/Backup", cwd);
         snprintf(processed_dir, sizeof(processed_dir), "%s/home/Processed", cwd);
         snprintf(unprocessed_dir, sizeof(unprocessed_dir), "%s/home/UnProcessed", cwd);
-
-        // Call the delete function for each directory
-        delete_txt_files(home_dir);
-        delete_txt_files(backup_dir);
-        delete_txt_files(processed_dir);
-        delete_txt_files(unprocessed_dir);
 
         // Call the delete function for each directory
         delete_csv_files(home_dir);

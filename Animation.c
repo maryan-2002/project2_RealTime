@@ -23,7 +23,6 @@ float scrollbarThumbHeight; // Dynamically calculated height of the scrollbar th
 
 bool draggingScrollbar = false; // Flag to check if the scrollbar is being dragged
 float dragStartY = 0.0f; // Starting Y position of the drag
-
 #define CHECK_INTERVAL 1000 // Time interval in milliseconds for checking the file
 #define ROW_HEIGHT 0.12f
 #define MAX_FILENAME_LEN 50
@@ -35,7 +34,6 @@ typedef struct {
     int rows;
     int columns;
 } RowData;
-
 // Global variables
 RowData *rowData = NULL;
 int totalDataRows = 0;
@@ -45,10 +43,7 @@ int maxVisibleRows = 6;     // Number of rows visible at a time
 const float rowHeight = 0.12f;  // Height of a row
 char filename[MAX_FILENAME_LEN] = "home.txt";
 time_t lastModifiedTime = 0;
-
 float windowHeight = 800.0f; // Default window height
-
-
 // File position variables
 float fileX = -0.2f;
 float fileY = 0.6f;
@@ -57,7 +52,6 @@ int stage = 0; // Animation stage: 0 = Home -> Processed, etc.
 #define ROWS_PER_PAGE 6
 // Timer variable
 float timer = 0.0f;
-
 // File counters for each folder
 int homeFiles = 1;
 int processedFiles = 0;
@@ -65,13 +59,10 @@ int unprocessedFiles = 0;
 int backupFiles = 0;
 int recycleBinFiles = 0;
 #define MAX_ROWS 100
-
 // Global variable to control the scroll offset
 float scrollOffset = 0.0f;
 const int totalRows = 6;        // Total number of rows in your table
 const float tableHeight = rowHeight * totalRows; // The height of all rows combined
-
-
 // Adjust this to set the number of visible rows
 const int VISIBLE_ROWS = 6;
 
@@ -190,7 +181,6 @@ void updateAnimation(int value) {
     glutPostRedisplay();  // Request a redraw
     glutTimerFunc(30, updateAnimation, 0); // Continuously update the animation
 }
-
 // Function to draw a regular circle
 void drawCircle(float x, float y, float radius) {
     int numSegments = 50;  // Number of segments to approximate the circle
@@ -222,7 +212,7 @@ void drawFileCountInCircle(float x, float y, int fileCount) {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c); // Smaller font
     }
 }
-
+//function to draw the recycle bin
 void drawTable(float startX, float startY) {
     glBegin(GL_QUADS);
     glColor3f(0.8f, 0.8f, 1.0f); // Light blue top
@@ -290,7 +280,7 @@ void drawTable(float startX, float startY) {
         }
     }
 }
-
+// Function to draw the scrollbar
 void readFile(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -332,7 +322,7 @@ void readFile(const char *filename) {
         glutPostRedisplay(); // Force table redraw
     }
 }
-
+// Function to check if the file has been updated
 void checkFileForUpdates(int value) {
     struct stat fileStat;
     if (stat(filename, &fileStat) == 0) {
@@ -343,7 +333,6 @@ void checkFileForUpdates(int value) {
     }
     glutTimerFunc(CHECK_INTERVAL, checkFileForUpdates, 0); // Reschedule
 }
-
 // Free allocated memory
 void freeRowData() {
     if (rowData != NULL) {
@@ -351,7 +340,6 @@ void freeRowData() {
         rowData = NULL;
     }
 }
-
 // Function to calculate scrollbar thumb height dynamically
 void calculateScrollbarThumbHeight() {
     if (totalDataRows <= maxVisibleRows) {
@@ -387,6 +375,7 @@ void drawScrollbar() {
         glEnd();
     }
 }
+// Function to update the scrollbar thumb position
 void updateScrollbarThumb(float deltaY) {
     scrollbarThumbY += deltaY;
     if (scrollbarThumbY > scrollbarYStart) scrollbarThumbY = scrollbarYStart;
@@ -399,7 +388,7 @@ void updateScrollbarThumb(float deltaY) {
 
     glutPostRedisplay();
 }
-
+// function to handle mouse wheel scrolling
 void mouseWheelCallback(int button, int direction, int x, int y) {
     // Adjust scroll direction based on wheel movement
     float deltaY = (direction > 0) ? 0.05f : -0.05f;
@@ -407,6 +396,7 @@ void mouseWheelCallback(int button, int direction, int x, int y) {
     updateScrollbarThumb(deltaY * (scrollbarYStart - scrollbarYEnd));  // Update thumb position based on scroll
     glutPostRedisplay();  // Redraw the screen
 }
+// Function to handle mouse drag events
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
@@ -450,6 +440,13 @@ void display() {
 
     glFlush();
 }
+
+
+
+
+
+
+// Function to initialize graphics
 void initGraphics(int argc, char *argv[]){ // Add the function prototype 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
