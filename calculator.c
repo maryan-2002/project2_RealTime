@@ -2,6 +2,7 @@
 #include "calculator.h"
 #include "globel.c"
 
+
 void calculate_csv_file(const char *filename, int calculator_id)
 {
     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
@@ -109,7 +110,7 @@ void calculate_csv_file(const char *filename, int calculator_id)
     free(column_sums);
     free(column_counts);
 
-        // Save the formatted filename to Processed.txt
+     // Save the formatted filename to Processed.txt
     save_to_processed_file(newValue->file_number);
 
     // Lock the mutex before modifying the shared structure
@@ -230,6 +231,7 @@ void *calculator_thread(void *arg)
     close(fifo_fd);
     return NULL;
 }
+
 
 
 // void calculate_csv_file(const char *filename, int calculator_id)

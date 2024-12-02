@@ -24,6 +24,7 @@ int is_csv_file(const char *filename)
     return ext && strcmp(ext, ".csv") == 0;
 }
 
+
 int is_file_older_than(const char *filepath, int age_in_seconds)
 {
     struct stat file_stat;
@@ -59,7 +60,6 @@ void save_to_text_file(const char *filename, const char *target_file) {
     // Close the file
     fclose(file);
 }
-
 
 void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, const char *dest_dir)
 {
@@ -101,8 +101,8 @@ void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, cons
                         pthread_mutex_lock(&shared_mutex_inspector);
                         shared_memory->unprocessed_count++;
                         //printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
-                        // Save the filename to UnProcessed.txt
                         save_to_text_file(filepath, "UnProcessed.txt");
+
                         if (shared_memory->unprocessed_count == unprocees_th)
                         {
                             printf("End of the grogram\n");
@@ -117,6 +117,8 @@ void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, cons
     }
     closedir(dir);
 }
+
+
 void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, const char *dest_dir)
 {
     DIR *dir = opendir(source_dir);
@@ -156,10 +158,9 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
                     {
                         pthread_mutex_lock(&shared_mutex_backup);
                         shared_memory->backup_count++;
-
-                        // Save the filename to Backup.txt
                         save_to_text_file(filepath, "Backup.txt");
-                        printf(" the number of backup file is : %d \n", shared_memory->backup_count);
+
+                        //printf(" the number of backup file is : %d \n", shared_memory->backup_count);
 
                         if (shared_memory->backup_count == backup_th)
                         {
@@ -176,6 +177,8 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
 
     closedir(dir);
 }
+
+
 
 void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
 {
@@ -212,11 +215,10 @@ void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
                     else
                     {
 
-                          // Log the deleted file's name to "Delete.txt"
-                        save_to_text_file(filepath, "Delete.txt");
-
                         pthread_mutex_lock(&shared_mutex_deleate);
                         shared_memory->deleted_count++;
+                        save_to_text_file(filepath, "Delete.txt");
+
                         //printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
                         if (shared_memory->deleted_count == delete_th)
                         {

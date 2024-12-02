@@ -55,6 +55,14 @@ void init_semaphore()
     pthread_mutexattr_destroy(&mutex_attr);
 }
 
+
+// Function to generate a random float in a given range
+float get_random_value(float min_value, float max_value)
+{
+    return ((float)rand() / RAND_MAX) * (max_value - min_value) + min_value;
+}
+
+
 // Function to write formatted_filename into home.txt and other data to data.txt
 void write_to_file(int generator_id, const char *filename, int rows, int cols) {
     FILE *file = fopen("data.txt", "a"); // Open for appending to add new lines to data.txt
@@ -87,11 +95,6 @@ void write_to_file(int generator_id, const char *filename, int rows, int cols) {
     fclose(home_file);
 }
 
-// Function to generate a random float in a given range
-float get_random_value(float min_value, float max_value)
-{
-    return ((float)rand() / RAND_MAX) * (max_value - min_value) + min_value;
-}
 
 
 void generate_csv_file(int generator_id)
@@ -169,7 +172,6 @@ void generate_csv_file(int generator_id)
     fclose(file);
     printf("Generator %d created file: %s with %d rows and %d columns\n", generator_id, filename, rows, cols);
     write_to_file(generator_id, filename, rows, cols);
-
     // // Open the FIFO for writing
     int fifo_fd = open(FIFO_PATH, O_WRONLY);
     if (fifo_fd < 0)

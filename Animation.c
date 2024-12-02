@@ -375,6 +375,8 @@ void drawScrollbar() {
         glEnd();
     }
 }
+
+
 // Function to update the scrollbar thumb position
 void updateScrollbarThumb(float deltaY) {
     scrollbarThumbY += deltaY;

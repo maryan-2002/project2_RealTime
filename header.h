@@ -28,8 +28,6 @@
 
 
 
-
-
 // Declare the variables as extern in the header file
 extern int min_rows;
 extern int max_rows;

@@ -280,6 +280,7 @@ int read_arguments_from_file(const char *filename)
     return 0;
 }
 
+
 // Function to kill all threads and exit
 void kill_all_and_exit()
 {
@@ -339,25 +340,14 @@ void kill_all_and_exit()
     exit(EXIT_SUCCESS);
 }
 
+
 int main(int argc, char *argv[])
 {
-    // Step 1: Delete the .txt files
-    delete_txt_files_in_main_dir();
 
-    // Step 2: Create the .txt files again after deletion
+    delete_txt_files_in_main_dir();
     create_txt_files_in_main_dir();
 
-    if (read_arguments_from_file("arguments.txt") != 0)
-    {
-        return EXIT_FAILURE;
-    }
-
-    printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
-    printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
-
-
-
-   char cwd[1024];
+       char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         // Print the current working directory for debugging
         printf("Current working directory: %s\n", cwd);
@@ -380,12 +370,13 @@ int main(int argc, char *argv[])
     } else {
         perror("getcwd() error");
     }
-    openGL_pid = fork();
-    if (openGL_pid == 0)
+    if (read_arguments_from_file("arguments.txt") != 0)
     {
-        initGraphics(argc, argv); // Initialize and start the OpenGL graphics
-        exit(0);
+        return EXIT_FAILURE;
     }
+
+    printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
+    printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
 
     // Seed random number generator
     srand(time(NULL));
