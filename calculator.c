@@ -2,10 +2,7 @@
 #include "calculator.h"
 #include "globel.c"
 
-<<<<<<< HEAD
 pthread_mutex_t data_mutex = PTHREAD_MUTEX_INITIALIZER;
-=======
->>>>>>> 06506c3ae67213b085ff9a8d160d0060ab50d603
 
 
 void calculate_csv_file(const char *filename, int calculator_id)
