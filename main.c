@@ -58,6 +58,45 @@ int sem_id;
 struct MEMORY *shared_memory; // Shared memory pointer
 struct SharedCalculators calc;
 
+
+// Function to delete .csv files in a directory
+void delete_csv_files(const char *directory_path) {
+    DIR *dir;
+    struct dirent *entry;
+
+    printf("Trying to open directory: %s\n", directory_path);
+
+    if (access(directory_path, F_OK) != 0) {
+        perror("Directory does not exist or cannot be accessed");
+        return;
+    }
+
+    dir = opendir(directory_path);
+    if (dir == NULL) {
+        perror("Error opening directory");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) { // Ensure it's a regular file
+            if (strcasecmp(strrchr(entry->d_name, '.'), ".csv") == 0) {
+                char file_path[1024];
+                snprintf(file_path, sizeof(file_path), "%s/%s", directory_path, entry->d_name);
+
+                if (unlink(file_path) == 0) {
+                    printf("Deleted: %s\n", file_path);
+                } else {
+                    perror("Error deleting file");
+                }
+            }
+        }
+    }
+
+    closedir(dir);
+}
+
+
+
 // Function to read arguments from the file
 int read_arguments_from_file(const char *filename)
 {
@@ -243,6 +282,28 @@ int main(int argc, char *argv[])
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
     printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
 
+
+
+   char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        // Print the current working directory for debugging
+        printf("Current working directory: %s\n", cwd);
+
+        // Create paths by appending subdirectories to the current directory
+        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024];
+        snprintf(home_dir, sizeof(home_dir), "%s/home", cwd);
+        snprintf(backup_dir, sizeof(backup_dir), "%s/home/Backup", cwd);
+        snprintf(processed_dir, sizeof(processed_dir), "%s/home/Processed", cwd);
+        snprintf(unprocessed_dir, sizeof(unprocessed_dir), "%s/home/UnProcessed", cwd);
+
+        // Call the delete function for each directory
+        delete_csv_files(home_dir);
+        delete_csv_files(backup_dir);
+        delete_csv_files(processed_dir);
+        delete_csv_files(unprocessed_dir);
+    } else {
+        perror("getcwd() error");
+    }
     openGL_pid = fork();
     if (openGL_pid == 0)
     {

@@ -307,7 +307,6 @@ void readFile(const char *filename) {
     int currentRowCount = 0;
     while (fgets(line, sizeof(line), file)) {
         line[strcspn(line, "\r\n")] = '\0'; // Remove newline
-        printf("Read line: %s\n", line);
 
         if (currentRowCount >= allocatedRows) {
             allocatedRows *= 2;
@@ -319,11 +318,6 @@ void readFile(const char *filename) {
                    rowData[currentRowCount].fileName,
                    &rowData[currentRowCount].rows,
                    &rowData[currentRowCount].columns) == 4) {
-            printf("Parsed Data - Generator ID: %d, File Name: %s, Rows: %d, Columns: %d\n",
-                   rowData[currentRowCount].generatorID,
-                   rowData[currentRowCount].fileName,
-                   rowData[currentRowCount].rows,
-                   rowData[currentRowCount].columns);
             currentRowCount++;
         }
     }
@@ -331,7 +325,6 @@ void readFile(const char *filename) {
 
     if (currentRowCount != totalDataRows) {
         totalDataRows = currentRowCount;
-        printf("Total Rows Updated: %d\n", totalDataRows);
         calculateScrollbarThumbHeight(); // Recalculate scrollbar
         if (startRow + maxVisibleRows > totalDataRows) {
             startRow = totalDataRows > maxVisibleRows ? totalDataRows - maxVisibleRows : 0;

@@ -22,6 +22,12 @@
 #include <errno.h>
 #include <GL/glut.h>
 #include <math.h>
+#include <dirent.h>
+#include <unistd.h>
+
+
+
+
 
 
 // Declare the variables as extern in the header file
