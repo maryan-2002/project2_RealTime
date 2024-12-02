@@ -343,11 +343,17 @@ void *startOpenGL(void *arg) {
     initGraphics(0, NULL); // Initialize and start OpenGL rendering
     return NULL;
 }
+<<<<<<< HEAD
 
 
 int main(int argc, char *argv[]) {
     pthread_t opengl_thread;
 
+=======
+int main(int argc, char *argv[]) {
+    pthread_t opengl_thread;
+
+>>>>>>> 06506c3ae67213b085ff9a8d160d0060ab50d603
     // Start the OpenGL thread
     if (pthread_create(&opengl_thread, NULL, startOpenGL, NULL) != 0) {
         perror("Failed to create OpenGL thread");
