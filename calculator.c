@@ -2,6 +2,8 @@
 #include "calculator.h"
 #include "globel.c"
 
+
+
 void calculate_csv_file(const char *filename, int calculator_id)
 {
     struct MEMORYcalculator *newValue = malloc(sizeof(struct MEMORYcalculator));
@@ -104,13 +106,28 @@ void calculate_csv_file(const char *filename, int calculator_id)
             printf(" %.2f ", newValue->column_averages[i]);
         }
     }
-    
 
     free(column_sums);
     free(column_counts);
 
-        // Save the formatted filename to Processed.txt
-    save_to_processed_file(newValue->file_number);
+    // Extract the file name from the full path
+    const char *just_filename = strrchr(filename, '/');
+    if (!just_filename)
+        just_filename = filename; // No '/' found, use the full string
+    else
+        just_filename++; // Move past the '/'
+
+    // Write the file name to Processed.txt
+    FILE *processed_file = fopen("Processed.txt", "a");
+    if (!processed_file)
+    {
+        perror("Error opening Processed.txt");
+    }
+    else
+    {
+        fprintf(processed_file, "%s\n", just_filename);
+        fclose(processed_file);
+    }
 
     // Lock the mutex before modifying the shared structure
     pthread_mutex_lock(&calc.mutex);
@@ -121,31 +138,6 @@ void calculate_csv_file(const char *filename, int calculator_id)
 
     // Unlock the mutex after modification
     pthread_mutex_unlock(&calc.mutex);
-}
-
-
-// Function to process the filename and save it to Processed.txt
-void save_to_processed_file(const char *filename) {
-    // Extract just the filename (e.g., "4.csv" from "home/4.csv")
-    const char *basename = strrchr(filename, '/');
-    if (basename != NULL) {
-        basename++;  // Skip the '/' character to get just the filename
-    } else {
-        basename = filename;  // If no '/' is found, use the original filename
-    }
-
-    // Open Processed.txt for appending
-    FILE *processed_file = fopen("Processed.txt", "a");
-    if (processed_file == NULL) {
-        perror("Error opening Processed.txt for writing");
-        return;
-    }
-
-    // Write the extracted filename to Processed.txt
-    fprintf(processed_file, "%s\n", basename);
-
-    // Close the file
-    fclose(processed_file);
 }
 
 
