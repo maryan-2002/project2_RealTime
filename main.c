@@ -5,8 +5,6 @@
 #include "mover.h"
 #include "inspector.h"
 
-pid_t openGL_pid; // Global variable
-
 
 // Global variables for configuration
 int min_rows = DEFAULT_MIN_ROWS;
@@ -79,12 +77,12 @@ void delete_txt_files_in_main_dir() {
             snprintf(file_path, sizeof(file_path), "%s/%s", cwd, files_to_delete[i]);
 
             // Debug: Print full file path
-            printf("Trying to delete: %s\n", file_path);
+            // printf("Trying to delete: %s\n", file_path);
 
             // Check if the file exists before attempting to delete
             if (access(file_path, F_OK) == 0) {
                 if (unlink(file_path) == 0) {
-                    printf("Deleted: %s\n", file_path);
+                    // printf("Deleted: %s\n", file_path);
                 } else {
                     perror("Error deleting file");
                 }
@@ -117,7 +115,7 @@ void create_txt_files_in_main_dir() {
             // Create the file by opening it in write mode
             FILE *file = fopen(file_path, "w");
             if (file) {
-                printf("Created: %s\n", file_path);
+                // printf("Created: %s\n", file_path);
                 fclose(file);  // Close the file
             } else {
                 perror("Error creating file");
@@ -133,7 +131,7 @@ void delete_csv_files(const char *directory_path) {
     DIR *dir;
     struct dirent *entry;
 
-    printf("Trying to open directory: %s\n", directory_path);
+    // printf("Trying to open directory: %s\n", directory_path);
 
     if (access(directory_path, F_OK) != 0) {
         perror("Directory does not exist or cannot be accessed");
@@ -153,7 +151,7 @@ void delete_csv_files(const char *directory_path) {
                 snprintf(file_path, sizeof(file_path), "%s/%s", directory_path, entry->d_name);
 
                 if (unlink(file_path) == 0) {
-                    printf("Deleted: %s\n", file_path);
+                    // printf("Deleted: %s\n", file_path);
                 } else {
                     perror("Error deleting file");
                 }
@@ -340,169 +338,151 @@ void kill_all_and_exit()
     exit(EXIT_SUCCESS);
 }
 
+// Function for OpenGL rendering thread
+void *startOpenGL(void *arg) {
+    initGraphics(0, NULL); // Initialize and start OpenGL rendering
+    return NULL;
+}
 
-int main(int argc, char *argv[])
-{
 
+int main(int argc, char *argv[]) {
+    pthread_t opengl_thread;
+
+    // Start the OpenGL thread
+    if (pthread_create(&opengl_thread, NULL, startOpenGL, NULL) != 0) {
+        perror("Failed to create OpenGL thread");
+        return EXIT_FAILURE;
+    }
+    // Step 1: Delete and create necessary text files
     delete_txt_files_in_main_dir();
     create_txt_files_in_main_dir();
 
-       char cwd[1024];
+    // Step 2: Clean up and set up the working directories
+    char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        // Print the current working directory for debugging
-        printf("Current working directory: %s\n", cwd);
-
         // Create paths by appending subdirectories to the current directory
-        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024],delete_dir[1024];
+        char home_dir[1024], backup_dir[1024], processed_dir[1024], unprocessed_dir[1024];
         snprintf(home_dir, sizeof(home_dir), "%s/home", cwd);
         snprintf(backup_dir, sizeof(backup_dir), "%s/home/Backup", cwd);
         snprintf(processed_dir, sizeof(processed_dir), "%s/home/Processed", cwd);
         snprintf(unprocessed_dir, sizeof(unprocessed_dir), "%s/home/UnProcessed", cwd);
-        snprintf(delete_dir, sizeof(delete_dir), "%s/home/Delete", cwd);
         
-
         // Call the delete function for each directory
         delete_csv_files(home_dir);
         delete_csv_files(backup_dir);
         delete_csv_files(processed_dir);
         delete_csv_files(unprocessed_dir);
-        delete_csv_files(delete_dir);
     } else {
         perror("getcwd() error");
     }
-    if (read_arguments_from_file("arguments.txt") != 0)
-    {
+
+    // Step 3: Read arguments from the configuration file
+    if (read_arguments_from_file("arguments.txt") != 0) {
         return EXIT_FAILURE;
     }
 
+    // Step 4: Starting generators
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
     printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
 
     // Seed random number generator
     srand(time(NULL));
 
-    if (mkfifo(FIFO_PATH, 0666) < 0)
-    {
+    if (mkfifo(FIFO_PATH, 0666) < 0) {
         // perror("Error creating FIFO");
     }
-    if (mkfifo(FIFO_PATH_MOVE, 0666) < 0)
-    {
+    if (mkfifo(FIFO_PATH_MOVE, 0666) < 0) {
         // perror("Error creating FIFO for movers");
     }
 
     init_semaphore();
     initialize_fifo_mutex();
+    
+    // Step 5: Initialize file generators and threads for moving files
     GeneratorParams params[num_generators];
-    for (int i = 0; i < num_generators; i++)
-    {
-
+    for (int i = 0; i < num_generators; i++) {
         params[i].generator_id = i + 1;
         params[i].min_time = min_time;
         params[i].max_time = max_time;
 
-        if (pthread_create(&generator_threads[i], NULL, file_generator, &params[i]) != 0)
-        {
+        if (pthread_create(&generator_threads[i], NULL, file_generator, &params[i]) != 0) {
             perror("Failed to create generator thread");
             return EXIT_FAILURE;
         }
     }
-    CalculatorParams calculator_params[num_calculators];
 
-    // // Create threads for each file calculator
-    for (int i = 0; i < num_calculators; i++)
-    {
+    // Create threads for each file calculator
+    CalculatorParams calculator_params[num_calculators];
+    for (int i = 0; i < num_calculators; i++) {
         calculator_params[i].calculator_id = i + 1;
         calculator_params[i].max_cols = max_cols;
 
-        if (pthread_create(&calculator_threads[i], NULL, calculator_thread, &calculator_params[i]) != 0)
-        {
+        if (pthread_create(&calculator_threads[i], NULL, calculator_thread, &calculator_params[i]) != 0) {
             perror("Failed to create calculator thread");
             return EXIT_FAILURE;
         }
     }
 
-    // Create threads for each CSV file mover
-    for (int i = 0; i < num_movers; i++)
-    {
-        if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0)
-        {
+    // Step 6: Create threads for file movers
+    for (int i = 0; i < num_movers; i++) {
+        if (pthread_create(&mover_threads[i], NULL, mover_thread, NULL) != 0) {
             perror("Failed to create mover thread");
             return EXIT_FAILURE;
         }
     }
 
-    for (int i = 0; i < num_type1; i++)
-    {
-
-        if (pthread_create(&type1_threads[i], NULL, inspector_thread_type_1, &age_limit) != 0)
-        {
-
+    // Step 7: Create inspector threads
+    for (int i = 0; i < num_type1; i++) {
+        if (pthread_create(&type1_threads[i], NULL, inspector_thread_type_1, &age_limit) != 0) {
             perror("Failed to create Type 1 inspector thread");
-
             return EXIT_FAILURE;
         }
     }
 
-    for (int i = 0; i < num_type2; i++)
-    {
-
-        if (pthread_create(&type2_threads[i], NULL, inspector_thread_type_2, &age_limit) != 0)
-        {
-
+    for (int i = 0; i < num_type2; i++) {
+        if (pthread_create(&type2_threads[i], NULL, inspector_thread_type_2, &age_limit) != 0) {
             perror("Failed to create Type 2 inspector thread");
-
             return EXIT_FAILURE;
         }
     }
 
-    for (int i = 0; i < num_type3; i++)
-    {
-
-        if (pthread_create(&type3_threads[i], NULL, inspector_thread_type_3, &age_limit) != 0)
-        {
-
+    for (int i = 0; i < num_type3; i++) {
+        if (pthread_create(&type3_threads[i], NULL, inspector_thread_type_3, &age_limit) != 0) {
             perror("Failed to create Type 3 inspector thread");
-
             return EXIT_FAILURE;
         }
     }
+
+    // Wait for a specified runtime duration before finishing
     sleep(runtime_th * 60);
-    printf(" time   over \n");
-    // kill_all_and_exit();
-    for (int i = 0; i < num_generators; i++)
-    {
+    printf("Time is up.\n");
+
+    // Step 9: Join threads and clean up
+    for (int i = 0; i < num_generators; i++) {
         pthread_join(generator_threads[i], NULL);
     }
 
-    // Join calculator threads
-    for (int i = 0; i < num_calculators; i++)
-    {
+    for (int i = 0; i < num_calculators; i++) {
         pthread_join(calculator_threads[i], NULL);
     }
 
-    // Join mover threads
-    for (int i = 0; i < num_movers; i++)
-    {
+    for (int i = 0; i < num_movers; i++) {
         pthread_join(mover_threads[i], NULL);
     }
 
-    // Join type1 inspector threads
-    for (int i = 0; i < num_type1; i++)
-    {
+    for (int i = 0; i < num_type1; i++) {
         pthread_join(type1_threads[i], NULL);
     }
 
-    // Join type2 inspector threads
-    for (int i = 0; i < num_type2; i++)
-    {
+    for (int i = 0; i < num_type2; i++) {
         pthread_join(type2_threads[i], NULL);
     }
 
-    // Join movtype3 inspectorer threads
-    for (int i = 0; i < num_type3; i++)
-    {
+    for (int i = 0; i < num_type3; i++) {
         pthread_join(type3_threads[i], NULL);
     }
+        pthread_join(opengl_thread, NULL);
+
 
     return EXIT_SUCCESS;
 }

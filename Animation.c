@@ -1,17 +1,14 @@
-#ifdef __APPLE_CC__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <GL/glut.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdbool.h>
+#include "header.h"
+
+typedef struct {
+    int calculator_id;
+    char file_number[50];
+    int num_rows;
+    float column_averages[50];
+} CalculatorData;
+
+CalculatorData displayedData;
+
 
 // Adjust the scrollbar positions
 float scrollbarX = 0.98f; // X position of the scrollbar (closer to the table)
@@ -398,7 +395,55 @@ void mouseWheelCallback(int button, int direction, int x, int y) {
     updateScrollbarThumb(deltaY * (scrollbarYStart - scrollbarYEnd));  // Update thumb position based on scroll
     glutPostRedisplay();  // Redraw the screen
 }
-// Function to handle mouse drag events
+
+/////////////////////////////////
+void drawRectangleBelowTable(float startX, float startY, float width, float height) {
+    float rectangleYStart = startY - tableHeight; // Position the rectangle directly below the table
+    glColor3f(0.7f, 0.7f, 0.7f); // Light gray color for the rectangle
+    glBegin(GL_QUADS);
+    glVertex2f(startX, rectangleYStart); // Top-left corner
+    glVertex2f(startX + width, rectangleYStart); // Top-right corner
+    glVertex2f(startX + width, rectangleYStart - height); // Bottom-right corner
+    glVertex2f(startX, rectangleYStart - height); // Bottom-left corner
+    glEnd();
+}
+
+void drawTextt(float x, float y, const char* text, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glRasterPos2f(x, y);
+    for (const char* c = text; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    }
+}
+
+void drawDataBelowTable() {
+    char buffer[256];
+
+    sprintf(buffer, "Calculator ID: %d", displayedData.calculator_id);
+    drawTextt(-0.9f, -0.7f, buffer, 0.0f, 0.0f, 0.0f);
+
+    sprintf(buffer, "Processed File: %s", displayedData.file_number);
+    drawTextt(-0.9f, -0.8f, buffer, 0.0f, 0.0f, 0.0f);
+
+    sprintf(buffer, "Number of Rows: %d", displayedData.num_rows);
+    drawTextt(-0.9f, -0.9f, buffer, 0.0f, 0.0f, 0.0f);
+
+    sprintf(buffer, "Column Averages:");
+    drawTextt(-0.9f, -1.0f, buffer, 0.0f, 0.0f, 0.0f);
+
+    float offsetX = -0.9f;
+    for (int i = 0; i < 50; i++) {  // Assuming 50 columns max
+        if (displayedData.column_averages[i] > 0) {
+            sprintf(buffer, "%.2f", displayedData.column_averages[i]);
+            offsetX += 0.1f;  // Adjust spacing as needed
+            drawTextt(offsetX, -1.1f, buffer, 0.0f, 0.0f, 0.0f);
+        }
+    }
+}
+
+
+
+//////////////////////////////
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
@@ -412,9 +457,9 @@ void display() {
     drawRecycleBin(-0.7f, -0.6f);
 
     // Draw the moving file
-    drawPaperFile(fileX, fileY); // Draw the moving file at the updated fileX position
+    drawPaperFile(fileX, fileY);
 
-    // Draw connecting lines (unchanged)
+    // Draw connecting lines
     glColor3f(0.0f, 0.0f, 0.0f);
     glBegin(GL_LINES);
     glVertex2f(-0.2f, 0.55f);
@@ -427,26 +472,24 @@ void display() {
     glVertex2f(-0.7f, -0.55f);
     glEnd();
 
-    // Draw folder labels (unchanged)
+    // Draw folder labels
     drawText(-0.2f, 0.65f, "Home", 0.0f, 0.0f, 0.0f);
     drawText(-0.75f, 0.65f, "Processed", 0.0f, 0.0f, 0.0f);
     drawText(-0.25f, -0.05f, "Unprocessed", 0.0f, 0.0f, 0.0f);
     drawText(-0.75f, -0.05f, "Backup", 0.0f, 0.0f, 0.0f);
     drawText(-0.8f, -0.45f, "Recycle Bin", 0.0f, 0.0f, 0.0f);
 
-    // Draw the table using the current `startRow`
+    // Draw the table
     drawTable(0.1f, 0.65f);
 
+    // Draw the rectangle below the table
+    drawRectangleBelowTable(0.1f, 0.5f, 0.89f, 0.5f); // Adjust height as needed
+    drawDataBelowTable();
     // Draw the scrollbar
     drawScrollbar();
 
     glFlush();
 }
-
-
-
-
-
 
 // Function to initialize graphics
 void initGraphics(int argc, char *argv[]){ // Add the function prototype 

@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "dirent.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "header.h": "c"
     }
 }
