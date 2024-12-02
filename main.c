@@ -5,6 +5,9 @@
 #include "mover.h"
 #include "inspector.h"
 
+pid_t openGL_pid; // Global variable
+
+
 // Global variables for configuration
 int min_rows = DEFAULT_MIN_ROWS;
 int max_rows = DEFAULT_MAX_ROWS;
@@ -45,6 +48,9 @@ pthread_t type2_threads[30];
 pthread_t type3_threads[30];
 pthread_t mover_threads[30];
 pthread_t calculator_threads[30];
+
+void initGraphics(int argc, char *argv[]); // Add the function prototype 
+
 
 struct sembuf acquire = {0, -1, SEM_UNDO}, release = {0, 1, SEM_UNDO};
 // Shared semaphore ID
@@ -236,6 +242,13 @@ int main(int argc, char *argv[])
 
     printf("Starting %d file generators with time range [%d, %d] seconds.\n", num_generators, min_time, max_time);
     printf("Global settings: %d rows, %d cols, value range [%.2d, %.d], miss percentage: %d%%\n", max_rows, max_cols, min_value, max_value, miss_percentage);
+
+    openGL_pid = fork();
+    if (openGL_pid == 0)
+    {
+        initGraphics(argc, argv); // Initialize and start the OpenGL graphics
+        exit(0);
+    }
 
     // Seed random number generator
     srand(time(NULL));
