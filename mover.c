@@ -103,7 +103,7 @@ void *mover_thread(void *arg)
                 char full_path[MAX_FILENAME_LENGTH];
                 snprintf(full_path, sizeof(full_path), "./%s", filename);
 
-                //printf("Mover thread is moving file: %s\n", filename);
+                printf("Mover thread is moving file: %s\n", filename);
                 move_file_to_processed(filename);
             }
         }

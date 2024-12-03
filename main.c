@@ -50,8 +50,16 @@ struct sembuf acquire = {0, -1, SEM_UNDO}, release = {0, 1, SEM_UNDO};
 // Shared semaphore ID
 int sem_id;
 struct MEMORY *shared_memory; // Shared memory pointer
-struct SharedCalculators calc;
-
+struct SharedCalculators calc = {
+    .calculators = NULL,
+    .min_average = __DBL_MAX__,
+    .min_column = -1,
+    .min_file = "",
+    .max_average = -__DBL_MAX__,
+    .max_column = -1,
+    .max_file = "",
+    .mutex = PTHREAD_MUTEX_INITIALIZER
+};
 // Function to read arguments from the file
 int read_arguments_from_file(const char *filename)
 {
