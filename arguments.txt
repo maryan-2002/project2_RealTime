@@ -5,18 +5,15 @@ max_cols: 150
 min_value: 0.0
 max_value: 300.0
 miss_percentage: 10
-unprocessed_value: 100
-backup_value: 100
-delete_value: 100
-
+unprocessed_value: 50
+backup_value: 50
+delete_value: 50
 num_generators: 15
 num_movers: 3
 num_calculators: 10
 num_inspectors: 10
-
 min_time: 10
 max_time: 40
-
 DEFAULT_MIN_ROWS: 10
 DEFAULT_MAX_ROWS: 100
 DEFAULT_MIN_COLS: 5

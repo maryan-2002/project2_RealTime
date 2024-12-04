@@ -24,7 +24,6 @@ int is_csv_file(const char *filename)
     return ext && strcmp(ext, ".csv") == 0;
 }
 
-
 int is_file_older_than(const char *filepath, int age_in_seconds)
 {
     struct stat file_stat;
@@ -38,26 +37,27 @@ int is_file_older_than(const char *filepath, int age_in_seconds)
 }
 
 // General function to save a file name to any specified text file
-void save_to_text_file(const char *filename, const char *target_file) {
-    // Extract just the filename (e.g., "4.csv" from "home/4.csv")
+void save_to_text_file(const char *filename, const char *target_file)
+{
     const char *basename = strrchr(filename, '/');
-    if (basename != NULL) {
-        basename++;  // Skip the '/' character to get just the filename
-    } else {
-        basename = filename;  // If no '/' is found, use the original filename
+    if (basename != NULL)
+    {
+        basename++;
+    }
+    else
+    {
+        basename = filename;
     }
 
-    // Open the target file for appending
     FILE *file = fopen(target_file, "a");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         perror("Error opening the target file for writing");
         return;
     }
 
-    // Write the extracted filename to the target file
     fprintf(file, "%s\n", basename);
 
-    // Close the file
     fclose(file);
 }
 
@@ -100,7 +100,7 @@ void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, cons
                     {
                         pthread_mutex_lock(&shared_mutex_inspector);
                         shared_memory->unprocessed_count++;
-                        //printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
+                        // printf(" the number of unprocessed_count file is : %d \n", shared_memory->unprocessed_count);
                         save_to_text_file(filepath, "UnProcessed.txt");
 
                         if (shared_memory->unprocessed_count == unprocees_th)
@@ -117,7 +117,6 @@ void inspect_and_move_csv_files(int age_in_seconds, const char *source_dir, cons
     }
     closedir(dir);
 }
-
 
 void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, const char *dest_dir)
 {
@@ -160,7 +159,7 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
                         shared_memory->backup_count++;
                         save_to_text_file(filepath, "Backup.txt");
 
-                        //printf(" the number of backup file is : %d \n", shared_memory->backup_count);
+                        // printf(" the number of backup file is : %d \n", shared_memory->backup_count);
 
                         if (shared_memory->backup_count == backup_th)
                         {
@@ -177,8 +176,6 @@ void inspect_and_move_csv_files2(int age_in_seconds, const char *source_dir, con
 
     closedir(dir);
 }
-
-
 
 void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
 {
@@ -217,9 +214,9 @@ void inspect_and_delete_csv_files(int age_in_seconds, const char *source_dir)
 
                         pthread_mutex_lock(&shared_mutex_deleate);
                         shared_memory->deleted_count++;
-                        save_to_text_file(filepath, "Delete.txt");
+                        save_to_text_file(filepath, "delete.txt");
 
-                        //printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
+                        // printf(" the number of delated file is : %d \n", shared_memory->deleted_count);
                         if (shared_memory->deleted_count == delete_th)
                         {
                             printf("End of the grogram\n");
