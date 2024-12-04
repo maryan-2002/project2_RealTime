@@ -1013,7 +1013,17 @@ void drawScrollbar() {
         glEnd();
     }
 }
+void setScrollbarToBottom() {
+    // Ensure that scrollbar starts at the bottom to show the most recent rows
+    scrollbarThumbY = scrollbarYStart;  // Position thumb at the bottom of the scrollbar
+    startRow = totalDataRows - maxVisibleRows;  // Start from the last row
 
+    if (startRow < 0) startRow = 0;  // Ensure valid range for startRow
+
+    // Update the scrollbar thumb height and redraw
+    calculateScrollbarThumbHeight();
+    glutPostRedisplay();
+}
 
 // Function to update the scrollbar thumb position
 void updateScrollbarThumb(float deltaY) {
@@ -1133,7 +1143,7 @@ void display() {
     drawFileCountInCircle(-0.05f, 0.75f, homeFiles);           // Home folder top-right corner
     drawFileCountInCircle(-0.55f, 0.75f, processedFiles);    // Processed folder top-right corner
     drawFileCountInCircle(-0.05f, 0.05f, unprocessedFiles);   // Unprocessed folder top-right corner
-drawFileCountInCircle(-0.55f, 0.05f, countNonEmptyLinesInBackup1("Backup1.txt"));
+    drawFileCountInCircle(-0.55f, 0.05f, countNonEmptyLinesInBackup1("Backup1.txt"));
       // Backup folder top-right corner
     drawFileCountInCircle(-0.55f, -0.37f, recycleBinFiles); // Recycle Bin top-right corner
 
@@ -1147,6 +1157,18 @@ drawFileCountInCircle(-0.55f, 0.05f, countNonEmptyLinesInBackup1("Backup1.txt"))
     glFlush();
 }
 
+void mouseWheelSimulated(int button, int state, int x, int y) {
+    if (state == GLUT_DOWN) {
+        if (button == 3) { // Scroll up
+            updateScrollbarThumb(0.05f * (scrollbarYStart - scrollbarYEnd));
+        } else if (button == 4) { // Scroll down
+            updateScrollbarThumb(-0.05f * (scrollbarYStart - scrollbarYEnd));
+        }
+        glutPostRedisplay();
+    }
+}
+
+
 void initGraphics(int argc, char *argv[]) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -1156,26 +1178,22 @@ void initGraphics(int argc, char *argv[]) {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
 
-    // Read initial file counts
     homeFiles = readFileList("home.txt", &homeFileList);
     processedFiles = readFileList("Processed.txt", &processedFileList);
 
-        readFile(filename);  // Load the file data
-    // Calculate the initial scrollbar thumb height
+    readFile(filename); 
+
     calculateScrollbarThumbHeight();
 
-    // Set the callback functions
     glutDisplayFunc(display);
-    glutTimerFunc(CHECK_INTERVAL, checkFileForUpdates, 0); // Check for file updates periodically
-    glutTimerFunc(CHECK_INTERVAL, checkAndProcessBackup, 0); // Check backup periodically
+    glutTimerFunc(CHECK_INTERVAL, checkFileForUpdates, 0);
+    glutTimerFunc(CHECK_INTERVAL, checkAndProcessBackup, 0);
     glutTimerFunc(CHECK_INTERVAL, checkAndProcessDelete, 0);
+        setScrollbarToBottom();
 
-    glutMouseWheelFunc(mouseWheelCallback); // Mouse wheel callback for scrolling
-
-
-    // Set up callbacks
+    glutMouseFunc(mouseWheelSimulated);
     glutDisplayFunc(display);
-    glutTimerFunc(CHECK_INTERVAL, checkFilesForUpdates, 0);
+
 
     glutMainLoop();
 }
