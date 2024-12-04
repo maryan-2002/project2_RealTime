@@ -22,6 +22,13 @@
 #include <errno.h>
 #include <GL/glut.h>
 #include <math.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+
+
+
 
 
 // Declare the variables as extern in the header file
@@ -64,6 +71,12 @@ typedef struct {
     int max_time;
 } GeneratorParams;
 
+typedef struct {
+    int calculator_id;
+    char file_number[256]; // Adjust size as needed
+    int num_rows;
+    float column_averages[50]; // Adjust size as needed
+} DisplayedData;
 
 struct MEMORY {
     int file_count;           // Shared file count (number of processed files)

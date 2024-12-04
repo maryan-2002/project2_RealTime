@@ -151,7 +151,24 @@ void calculate_csv_file(const char *filename, int calculator_id)
 
     free(column_sums);
     free(column_counts);
+    // Extract the file name from the full path
+    const char *just_filename = strrchr(filename, '/');
+    if (!just_filename)
+        just_filename = filename; // No '/' found, use the full string
+    else
+        just_filename++; // Move past the '/'
 
+    // Write the file name to Processed.txt
+    FILE *processed_file = fopen("Processed.txt", "a");
+    if (!processed_file)
+    {
+        perror("Error opening Processed.txt");
+    }
+    else
+    {
+        fprintf(processed_file, "%s\n", just_filename);
+        fclose(processed_file);
+    }
     // Add newValue to the linked list
     pthread_mutex_lock(&calc.mutex);
     newValue->next = calc.calculators;
@@ -237,4 +254,3 @@ void *calculator_thread(void *arg)
     close(fifo_fd);
     return NULL;
 }
-

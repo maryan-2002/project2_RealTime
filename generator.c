@@ -55,11 +55,46 @@ void init_semaphore()
     pthread_mutexattr_destroy(&mutex_attr);
 }
 
+
 // Function to generate a random float in a given range
 float get_random_value(float min_value, float max_value)
 {
     return ((float)rand() / RAND_MAX) * (max_value - min_value) + min_value;
 }
+
+
+// Function to write formatted_filename into home.txt and other data to data.txt
+void write_to_file(int generator_id, const char *filename, int rows, int cols) {
+    FILE *file = fopen("data.txt", "a"); // Open for appending to add new lines to data.txt
+    if (file == NULL) {
+        perror("Error opening data.txt for writing");
+        return;
+    }
+
+    // Remove the "home/" prefix from the filename
+    char formatted_filename[256]; // Adjust the size as needed
+    if (strncmp(filename, "home/", 5) == 0) {
+        strcpy(formatted_filename, filename + 5); // Skip the "home/" part
+    } else {
+        strcpy(formatted_filename, filename); // If "home/" is not present, keep the filename as is
+    }
+
+    // Print the formatted data to data.txt
+    fprintf(file,"%d,%s,%d,%d\n", generator_id, formatted_filename, rows, cols);
+    fclose(file);
+
+    // Now write the formatted_filename to home.txt
+    FILE *home_file = fopen("home.txt", "a");  // Open home.txt in append mode
+    if (home_file == NULL) {
+        perror("Error opening home.txt for writing");
+        return;
+    }
+
+    // Write the formatted_filename to home.txt
+    fprintf(home_file, "%s\n", formatted_filename);
+    fclose(home_file);
+}
+
 
 
 void generate_csv_file(int generator_id)
@@ -136,6 +171,7 @@ void generate_csv_file(int generator_id)
 
     fclose(file);
     printf("Generator %d created file: %s with %d rows and %d columns\n", generator_id, filename, rows, cols);
+    write_to_file(generator_id, filename, rows, cols);
     // // Open the FIFO for writing
     int fifo_fd = open(FIFO_PATH, O_WRONLY);
     if (fifo_fd < 0)
