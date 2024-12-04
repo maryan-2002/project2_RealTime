@@ -108,7 +108,6 @@ void *mover_thread(void *arg)
             }
         }
         wait(10);
-        // Unlock the mutex after reading the FIFO
         pthread_mutex_unlock(&fifo_mutex);
     }
 
